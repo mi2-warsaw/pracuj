@@ -11,7 +11,7 @@ no_of_pages = soup.find('ul', class_='desktopPagin clearfix').find_all('li')[-2]
 no_of_pages = int(no_of_pages)
 last_page = False
 
-with open('jobs.csv', 'w') as csvfile:
+with open('jobs160207.csv', 'w') as csvfile:
     fieldnames = ['id', 'position', 'employer', 'date', 'location', 'href']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
