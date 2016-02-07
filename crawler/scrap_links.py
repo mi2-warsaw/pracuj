@@ -57,7 +57,7 @@ with open('jobs.csv', 'w') as csvfile:
 
             # Dump output to csv file
             for loc, lnk in loc_link:
-                writer.writerow({'id': i,
+                writer.writerow({'id': id,
                                  'position': position.encode('ascii', 'ignore'),
                                  'employer': employer.encode('ascii', 'ignore'),
                                  'date': date.encode('ascii', 'ignore'),
