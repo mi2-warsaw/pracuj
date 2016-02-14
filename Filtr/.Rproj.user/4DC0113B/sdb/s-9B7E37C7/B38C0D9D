@@ -1,0 +1,18 @@
+{
+    "contents" : "",
+    "created" : 1455236352991.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B38C0D9D",
+    "lastKnownWriteTime" : 31244212048494674,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "context" : ".GlobalEnv:::extract_fun"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "type" : "r_code_browser"
+}

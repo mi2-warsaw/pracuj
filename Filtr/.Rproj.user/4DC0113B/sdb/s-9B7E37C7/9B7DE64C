@@ -1,0 +1,25 @@
+{
+    "contents" : "",
+    "created" : 1455378795655.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "9B7DE64C",
+    "lastKnownWriteTime" : 0,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "ufb6tlsqiz",
+        "caption" : "dic_list_i",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=dic_list_i&cache_key=ufb6tlsqiz",
+        "displayedObservations" : 3,
+        "environment" : "",
+        "object" : "dic_list_i",
+        "totalObservations" : 3,
+        "variables" : 1
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}
