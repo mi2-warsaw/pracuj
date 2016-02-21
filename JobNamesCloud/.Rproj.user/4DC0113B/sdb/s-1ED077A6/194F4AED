@@ -1,0 +1,18 @@
+{
+    "contents" : "# loading libs\nlibrary(\"readr\", lib.loc=\"D:/Program Files/R/R-devel/library\")\nlibrary(\"dplyr\", lib.loc=\"~/R/win-library/3.3\")\nlibrary(\"data.table\", lib.loc=\"D:/Program Files/R/R-devel/library\")\nlibrary(\"utils\", lib.loc=\"D:/Program Files/R/R-devel/library\")\n\n# switching dir to get some data\nsetwd(\"../Filtr\")\n\n# reading needed datasets\nfiltered_data_w_dupli <- read_csv(\"filtered_data_w_dupli.csv\" , col_names = TRUE)\nneeded_complete_phrases <- read_csv(\"needed_complete_phrases.csv\" , col_names = TRUE)\n\n# converting data.table column to vector of strings\nneeded_complete_phrases <- as.vector(needed_complete_phrases$needed_complete_phrases)\n\n\nexeptions_phrases <- read_csv(\"exeptions_phrases.csv\" , col_names = TRUE)\n\n# going back home\nsetwd(\"../JobNamesCloud\")\n\n# creating data.frame to accumulate numbers of offers for a given phrase\nnum_of_nam <- c()\n\n\n\nfor (NCP in needed_complete_phrases)  {\n \n \n  work_var <- mutate(filtered_data_w_dupli, JobNameIndicator = grepl(paste0(\".*\",NCP,\".*\"), href) )%>% summarize(sum(JobNameIndicator))\n  num_of_nam <- append(num_of_nam, work_var)\n  \n  #num_of_nam <- rbind(num_of_nam, as.data.frame(assign(paste0(\"\",NCP), work_var)))\n  #filtered_data <- rbind(filtered_data, filtered_data1)\n}\n\n\nnames(num_of_nam) <- needed_complete_phrases\nnum_of_nam <- sapply(num_of_nam, \n                function (x) {return(x)})\n\ndf_row_names <- as.character(1:length(needed_complete_phrases))\n\nnum_of_nam_df <- as.data.frame(num_of_nam, row.names = df_row_names, stringsAsFactors = FALSE)\nnum_of_nam_df <- data.frame(needed_complete_phrases, num_of_nam_df)\nnames(num_of_nam_df) <- c(\"phrase\",\"num_of_offers\")\nnum_of_nam_df <-  arrange(num_of_nam_df, desc(num_of_offers))\n\n# saving solution to file\nwrite_csv(num_of_nam_df, \"JobNamesCloud.csv\")",
+    "created" : 1456087863657.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1268189919",
+    "id" : "194F4AED",
+    "lastKnownWriteTime" : 1456056789,
+    "path" : "D:/eR/MI2/pracuj/pracuj/JobNamesCloud/JobNamesCloud.R",
+    "project_path" : "JobNamesCloud.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

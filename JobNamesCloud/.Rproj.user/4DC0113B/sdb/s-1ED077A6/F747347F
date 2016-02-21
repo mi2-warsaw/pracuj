@@ -1,0 +1,25 @@
+{
+    "contents" : "",
+    "created" : 1456092613272.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "F747347F",
+    "lastKnownWriteTime" : 1456056789,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "q3pq7qjsqb",
+        "caption" : "num_of_nam_df",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=num_of_nam_df&cache_key=q3pq7qjsqb",
+        "displayedObservations" : "11",
+        "environment" : "",
+        "object" : "num_of_nam_df",
+        "totalObservations" : "11",
+        "variables" : "2"
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}
