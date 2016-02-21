@@ -95,15 +95,16 @@ setwd("../crawler")
 
   # filtering according to phrases normally indicating data.science industry job   
   filtered_data <- data.frame()
+  filtered_data_w_dupli <- data.frame()
   omited_data <- data.frame()
   for (NCP in needed_complete_phrases)  {
-    filtered_data1 <- mutate(pracuj_data, DSIndicator = grepl(paste0(".*",NCP,".*"), href) )%>% filter(DSIndicator == TRUE)%>%mutate(JobName = paste0(NCP)) 
+    filtered_data1 <- mutate(pracuj_data, DSIndicator = grepl(paste0(".*",NCP,".*"), href) )%>% filter(DSIndicator == TRUE)#%>%mutate(JobName = paste0(NCP)) 
     filtered_data <- rbind(filtered_data, filtered_data1)
   }
   
    
     nonDS_primarily_omited_data <- mutate(pracuj_data, DSIndicator = grepl(paste0(".*",NCP,".*"), href) )%>%filter(DSIndicator == FALSE)
- 
+    filtered_data_w_dupli <- filtered_data
     
 
   
@@ -126,6 +127,8 @@ setwd("../crawler")
   nonDS_primarily_omited_data <- select(nonDS_primarily_omited_data, -contains("Indicator"))%>%arrange(desc(date))
   nonDS_exeptions_omited_data <- select(nonDS_exeptions_omited_data, -contains("Indicator"))%>%arrange(desc(date))
   
+  # getting dataset for number of phrases analysis ready
+  filtered_data_w_dupli <- filtered_data
   
   # same ID killer
   filtered_data <- as.data.table(filtered_data)
@@ -135,10 +138,11 @@ setwd("../crawler")
   
   
   
-  # writing solution to file
+  # writing solution to files
   write_csv(filtered_data, "pracuj_filtered.csv")
   write_csv( nonDS_exeptions_omited_data, "nonDS_exeptions_omited_data.csv")
   write_csv(nonDS_primarily_omited_data,  "nonDS_primarily_omited_data.csv")
+  write_csv(filtered_data_w_dupli, "filtered_data_w_dupli.csv")
   
   needed_complete_phrases <- as.data.frame(needed_complete_phrases)
   write_csv(needed_complete_phrases, "needed_complete_phrases.csv")
