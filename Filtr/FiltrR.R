@@ -97,7 +97,7 @@ setwd("../crawler")
   filtered_data <- data.frame()
   omited_data <- data.frame()
   for (NCP in needed_complete_phrases)  {
-    filtered_data1 <- mutate(pracuj_data, DSIndicator = grepl(paste0(".*",NCP,".*"), href) )%>% filter(DSIndicator == TRUE) 
+    filtered_data1 <- mutate(pracuj_data, DSIndicator = grepl(paste0(".*",NCP,".*"), href) )%>% filter(DSIndicator == TRUE)%>%mutate(JobName = paste0(NCP)) 
     filtered_data <- rbind(filtered_data, filtered_data1)
   }
   
@@ -128,11 +128,21 @@ setwd("../crawler")
   
   
   # same ID killer
-  filtered_data <- filtered_data[!duplicated(filtered_data, by = "id"),]
+  filtered_data <- as.data.table(filtered_data)
+  setkey(filtered_data, id)
+  filtered_data <- filtered_data[!duplicated(filtered_data),]
+  filtered_data <- as.data.frame(filtered_data)
+  
   
   
   # writing solution to file
   write_csv(filtered_data, "pracuj_filtered.csv")
   write_csv( nonDS_exeptions_omited_data, "nonDS_exeptions_omited_data.csv")
   write_csv(nonDS_primarily_omited_data,  "nonDS_primarily_omited_data.csv")
+  
+  needed_complete_phrases <- as.data.frame(needed_complete_phrases)
+  write_csv(needed_complete_phrases, "needed_complete_phrases.csv")
+  
+  exeptions_phrases <- as.data.frame(exeptions_phrases)
+  write_csv(exeptions_phrases, "exeptions_phrases.csv")
   
