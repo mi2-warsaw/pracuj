@@ -2,6 +2,7 @@
 library("dplyr", lib.loc="D:/Program Files/R/R-devel/library")
 library("readr", lib.loc="D:/Program Files/R/R-devel/library")
 library("utils", lib.loc="D:/Program Files/R/R-devel/library")
+library("data.table", lib.loc="D:/Program Files/R/R-devel/library")
 
 
 #swapping dir to get some data
@@ -49,14 +50,16 @@ setwd("../crawler")
   
   
   
+  # changing dir to get dicts
+  setwd("dict")
+  
   # listing all avaliable dictionaries
-  f_dic_names <- list.files("../Filtr", pattern="*.csv", full.names=FALSE)
-  f_dic_names <- subset(f_dic_names, subset = (f_dic_names != "pracuj_filtered.csv" &  f_dic_names != "jobs.csv")) %>%
-                 as.list()
+  f_dic_names <- list.files("../dict", pattern="*.csv", full.names=FALSE)
+
+  
+  
   
   dic_list <- list()
-  
-  
   
   
   #reading all avaliable dictionaries
@@ -67,19 +70,17 @@ setwd("../crawler")
    dic_list <- append(dic_list, dic_list_i)  
   }
   
+  # going back to ../
+  setwd("../")
+  
   #creating propper vector names for phrases extraction from dictionaries to vectors
   f_dic_names <- lapply(f_dic_names, function (x) {gsub(pattern = "\\.*\\.csv$",replacement = "", x)})
   
   
   # naming vector of dictionaries names
   names(dic_list) <- f_dic_names
-  
-  
 
-  
 
-  
-  
 # Propper filtering
   
 # 'href' selected for filtering due to universal structure .../position-name-city
@@ -92,25 +93,46 @@ setwd("../crawler")
   exeptions_phrases <- unlist(dic_list[grep(pattern = ".*exeptions_phrase\\.*", names(dic_list))], use.names = FALSE)
   
 
-
   # filtering according to phrases normally indicating data.science industry job   
   filtered_data <- data.frame()
+  omited_data <- data.frame()
   for (NCP in needed_complete_phrases)  {
     filtered_data1 <- mutate(pracuj_data, DSIndicator = grepl(paste0(".*",NCP,".*"), href) )%>% filter(DSIndicator == TRUE) 
     filtered_data <- rbind(filtered_data, filtered_data1)
   }
   
+   
+    nonDS_primarily_omited_data <- mutate(pracuj_data, DSIndicator = grepl(paste0(".*",NCP,".*"), href) )%>%filter(DSIndicator == FALSE)
+ 
+    
+
+  
   
   # excluding offers containing phrases which indicate non-data.science affiliation 
+    nonDS_exeptions_omited_data <- data.frame()
   for (EP in exeptions_phrases)
   {
-  filtered_data <- mutate(filtered_data, ExeptionIndicator = grepl(paste0(".*",EP,".*"), href) )%>% filter(ExeptionIndicator == FALSE)
+    filtered_data <- mutate(filtered_data, ExeptionIndicator = grepl(paste0(".*",EP,".*"), href) )
+    nonDS_exeptions_omited_data1 <- filter(filtered_data, ExeptionIndicator == TRUE)
+    filtered_data <-filter(filtered_data, ExeptionIndicator == FALSE)
+    nonDS_exeptions_omited_data <- rbind(nonDS_exeptions_omited_data, nonDS_exeptions_omited_data1)
+    }
+
   
-  }
- 
+  
+  
   # removing "Indicators" from dataset
   filtered_data <- select(filtered_data, -contains("Indicator"))%>%arrange(desc(date))
+  nonDS_primarily_omited_data <- select(nonDS_primarily_omited_data, -contains("Indicator"))%>%arrange(desc(date))
+  nonDS_exeptions_omited_data <- select(nonDS_exeptions_omited_data, -contains("Indicator"))%>%arrange(desc(date))
+  
+  
+  # same ID killer
+  filtered_data <- filtered_data[!duplicated(filtered_data, by = "id"),]
+  
   
   # writing solution to file
   write_csv(filtered_data, "pracuj_filtered.csv")
+  write_csv( nonDS_exeptions_omited_data, "nonDS_exeptions_omited_data.csv")
+  write_csv(nonDS_primarily_omited_data,  "nonDS_primarily_omited_data.csv")
   
