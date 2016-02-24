@@ -1,3 +1,12 @@
+---
+title: "pracuj.pl analysis"
+author: "krzyslom"
+date: "16 lutego 2016"
+output: html_document
+---
+
+## Setup
+```{r message=F}
 # set working directory
 # setwd("/home/krzysztof/projects/pracuj/analysis")
 
@@ -7,7 +16,9 @@ library(tidyr)
 library(maptools)
 library(rgeos)
 library(SmarterPoland) # contains ggplot2
+```
 
+```{r echo=F}
 # read data to analyze
 df <- read.csv("../Filtr/pracuj_filtered.csv",
                stringsAsFactors=F, fileEncoding="WINDOWS-1250")
@@ -44,7 +55,9 @@ for (i in 1:length(inlist)) {
     abjob <- append(abjob, inlist[[i]])
   }
 }
+```
 
+```{r echo=F}
 # --- FOREIGN OFFERS --- #
 
 # filter abroad positions
@@ -68,7 +81,9 @@ for (i in 1:length(foreign$city)) {
     foreign$city[i] <- NA
   }
 }
+```
 
+```{r echo=F}
 # --- POLISH OFFERS --- #
 
 # filter polish positions, take 
@@ -111,7 +126,9 @@ for (i in 1:length(citiesProv)) {
     polish$province[nrow(polish)] <- citiesProv[[i]][length(citiesProv[[i]])]
   }
 }
+```
 
+```{r echo=F}
 # --- MAP --- #
 
 # read provinces shapes data
@@ -129,13 +146,17 @@ shp@data$VARNAME_1 <- provinces
 
 # fortify data
 shpf <- fortify(shp, region="VARNAME_1")
+```
 
+```{r echo=F}
 # PROVINCES
 
 # create data.frame for map filling
 offersPerProvince <- data.frame(table(polish$province), stringsAsFactors=F)
 names(offersPerProvince) <- c("province", "n")
+```
 
+```{r echo=F}
 # CITIES
 
 # create data.frame for map filling
@@ -171,7 +192,9 @@ offersPerCity <- offersPerCity %>%
   mutate(interval = cut(offersPerCity$n,
                         c(0, 1, 10, 50, 100, 200, 300, max(offersPerCity$n))))
 levels(offersPerCity$interval)[1] <- 1
+```
 
+```{r echo=F}
 # COMPANIES
 
 # create data.frame for map filling
@@ -181,9 +204,10 @@ names(offersPerCompany) <- c("company", "n")
 offersVsCompanies <- offersPerCompany %>%
   group_by(n) %>%
   summarise(companies = n_distinct(company))
+```
 
-# PLOTS
-
+## Plots
+```{r}
 # create province plot
 provinceMap <- ggplot() +
   # fill by number of offers
@@ -206,7 +230,9 @@ provinceMap <- ggplot() +
         axis.title=element_blank()) +
   # add title
   ggtitle("Ile ofert w województwie?")
+```
 
+```{r}
 # create city plot
 cityMap <- ggplot(offersPerCity, aes(x=long, y=lat, col=interval)) +
   # color by number of offers
@@ -230,7 +256,9 @@ cityMap <- ggplot(offersPerCity, aes(x=long, y=lat, col=interval)) +
         axis.title=element_blank(), legend.key=element_blank()) +
   # add title
   ggtitle("Ile ofert w mieście?")
+```
 
+```{r}
 # create company plot
   companyScatter <- ggplot(offersVsCompanies, aes(x=companies, y=n)) +
   # visualize data
@@ -245,7 +273,10 @@ cityMap <- ggplot(offersPerCity, aes(x=long, y=lat, col=interval)) +
   theme(panel.grid.minor.x=element_blank()) +
   # add title
   ggtitle("Ile firm złożyło konkretną liczbę ofert?")
+```
 
+## Plots
+```{r echo=F}
 # plots
 provinceMap
 cityMap
@@ -256,3 +287,4 @@ companyScatter
 #   # bars by number of offers
 #   geom_bar(stat="identity") +
 #   coord_flip()
+```

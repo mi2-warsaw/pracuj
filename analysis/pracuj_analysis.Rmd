@@ -8,39 +8,42 @@ output: html_document
 ## Setup
 ```{r message=F}
 # set working directory
-# setwd("C:\\Users\\Krzysztof\\Documents\\GitHub\\pracuj\\analysis")
+# setwd("/home/krzysztof/projects/pracuj/analysis")
 
 # import packages
 library(dplyr)
 library(tidyr)
 library(maptools)
 library(rgeos)
-library(ggplot2)
+library(SmarterPoland) # contains ggplot2
+```
 
+```{r echo=F}
 # read data to analyze
-df <- read.csv("../Filtr/pracuj_filtered.csv", stringsAsFactors=F)
+df <- read.csv("../Filtr/pracuj_filtered.csv",
+               stringsAsFactors=F, fileEncoding="WINDOWS-1250")
 
-# leave only unique offers and for now focus only on locations
+# leave only unique offers
 pracuj <- df %>%
-	filter(!duplicated(id)) %>%
-	select(location)
+ filter(!duplicated(id))
 
 # In location parameter abroad jobs contain either only country's name
 # or "city, country" structure. Need to separate them from polish offers which
-# mostly have "city, province" structure. Sometimes it is only province or couple
-# of cities in one province (e.g. "GdaÒsk, Gdynia, Sopot, pomorskie").
+# mostly have "city, province" structure. Sometimes it is only province,
+# couple of cities in one province (e.g. "Gda≈Ñsk, Gdynia, Sopot, pomorskie")
+# or bunch of towns from across the country.
 
 # vector of all europan countires
-euro <- c("Albania", "Andora", "Anglia", "Austria", "Belgia", "Bia≥oruú",
-		  "Boúnia i Hercegowina", "Bu≥garia", "Chorwacja", "Cypr",
-		  "CzarnogÛra", "Czechy", "Dania", "Estonia", "Finlandia", 
-		  "Francja", "Gibraltar", "Grecja", "Gruzja", "Hiszpania",
-		  "Holandia", "Irlandia", "Islandia", "Kazachstan", "Liechtenstein",
-		  "Litwa", "Luksemburg", "£otwa", "Macedonia", "Malta", "Monako",
-		  "Mo≥dawia", "Niemcy", "Norwegia", "Polska", "Portugalia", "Rosja",
-		  "Rumunia", "San Marino", "Serbia", "Szwajcaria", "Szwecja",
-		  "S≥owacja", "S≥owenia", "Turcja", "Ukraina", "Watykan",
-		  "Wielka Brytania", "WÍgry", "W≥ochy")
+euro <- c("Albania", "Andora", "Anglia", "Austria", "Belgia", "Bia≈Çoru≈õ",
+          "Bo≈õnia i Hercegowina", "Bu≈Çgaria", "Chorwacja", "Cypr",
+          "Czarnog√≥ra", "Czechy", "Dania", "Estonia", "Finlandia", 
+          "Francja", "Gibraltar", "Grecja", "Gruzja", "Hiszpania",
+          "Holandia", "Irlandia", "Islandia", "Kazachstan", "Liechtenstein",
+          "Litwa", "Luksemburg", "≈Åotwa", "Macedonia", "Malta", "Monako",
+          "Mo≈Çdawia", "Niemcy", "Norwegia", "Polska", "Portugalia", "Rosja",
+          "Rumunia", "San Marino", "Serbia", "Szwajcaria", "Szwecja",
+          "S≈Çowacja", "S≈Çowenia", "Turcja", "Ukraina", "Watykan",
+          "Wielka Brytania", "Wƒôgry", "W≈Çochy")
 
 # find abroad jobs
 inlist <- lapply(euro, function(x) {grep(x, pracuj$location)})
@@ -48,118 +51,240 @@ inlist <- lapply(euro, function(x) {grep(x, pracuj$location)})
 # separate abroad jobs indexes
 abjob <- c()
 for (i in 1:length(inlist)) {
-	if (length(inlist[[i]]) != 0) {
-		abjob <- append(abjob, inlist[[i]])
-	}
+  if (length(inlist[[i]]) != 0) {
+    abjob <- append(abjob, inlist[[i]])
+  }
 }
 ```
 
-## Foreign offers
-```{r}
+```{r echo=F}
 # --- FOREIGN OFFERS --- #
 
 # filter abroad positions
-foreign <- pracuj %>%
-	filter(location %in% pracuj[abjob, ])
+foreign <- pracuj[abjob, ]
 
-# paste "NA, " into foreign positions without cities for later column separation
+# paste "NA, " into foreign positions without cities
+# for later column separation
 for (i in 1:length(foreign$location)) {
-	if (!grepl(", ", foreign$location[i])) {
-		foreign$location[i] <- paste0(NA, ", ", foreign$location[i])
-	}
+  if (!grepl(", ", foreign$location[i])) {
+    foreign$location[i] <- paste0(NA, ", ", foreign$location[i])
+  }
 }
 
-# separate foreign locations to c(city, country) structure and convert NA strings
+# separate foreign locations to c(city, country) structure, convert NA strings
 foreign <- foreign %>%
-	separate(location, c("city", "country"), sep=", ", convert=T)
+  separate(location, c("city", "country"), sep=", ", convert=T)
+
+# substitute doubled country names in city column with NA
+for (i in 1:length(foreign$city)) {
+  if(foreign$city[i] %in% euro) {
+    foreign$city[i] <- NA
+  }
+}
 ```
 
-## Polish offers
-```{r}
+```{r echo=F}
 # --- POLISH OFFERS --- #
 
-# filter polish positions
-polish <- pracuj %>%
-	filter(location %in% pracuj[-abjob, ])
+# filter polish positions, take 
+polish <- pracuj[-abjob, ]
 
-# get multiple cities positions strings
+# get multiple cities positions
 mulCit <- polish %>%
-	filter(grepl(",.*,", polish$location))
+  filter(grepl(",.*,", polish$location))
+
+# erase them from data.frame
+polish <- polish[-grep(",.*,", polish$location), ]
 
 # split strings into cities and porvinces
 citiesProv <- strsplit(mulCit$location, ", ")
 
-# separate cities and provinces, for now drop cities
-towns <- c()
-provs <- c()
-for (i in 1:length(citiesProv)) {
-	provs[i] <- citiesProv[[i]][length(citiesProv[[i]])]
-}
-
-# substitute multiple cities rows with provinces only
-j <- 1
-for (i in grep(",.*,", polish$location)) {
-	polish$location[i] <- provs[j]
-	j <- j + 1
-}
-
 # paste "NA, " into polish positions without cities for later column separation
 for (i in 1:length(polish$location)) {
-	if (!grepl(", ", polish$location[i])) {
-		polish$location[i] <- paste0(NA, ", ", polish$location[i])
-	}
+  if (!grepl(", ", polish$location[i])) {
+    polish$location[i] <- paste0(NA, ", ", polish$location[i])
+  }
 }
 
 # separate polish locations to c(city, province) structure, convert NA strings
 polish <- polish %>%
-	separate(location, c("city", "province"), sep=", ")
+  separate(location, c("city", "province"), sep=", ", convert=T)
+
+# change location column name to province
+# add fake city column to multiple cities positions
+fakeCol <- which(names(mulCit) == "location")
+names(mulCit)[fakeCol] <- "province"
+mulCit <- cbind(mulCit[, 1:(fakeCol - 1)],
+                city = rep(0, nrow(mulCit)),
+                mulCit[, (fakeCol):length(names(mulCit))])
+
+# append multiple cities positions as single rows
+for (i in 1:length(citiesProv)) {
+  for (j in 1:(length(citiesProv[[i]]) - 1)) {
+    polish[nrow(polish) + 1, ] <- mulCit[i, ]
+    polish$city[nrow(polish)] <- citiesProv[[i]][j]
+    polish$province[nrow(polish)] <- citiesProv[[i]][length(citiesProv[[i]])]
+  }
+}
 ```
 
-## Map
-```{r}
+```{r echo=F}
 # --- MAP --- #
 
 # read provinces shapes data
 shp <- readShapePoly("POL_adm_shp/POL_adm1.shp")
 
 # vector of provinces in order as they appear in shp@data$VARNAME_1
-provinces <- c("≥Ûdzkie", "úwiÍtokrzyskie", "wielkopolskie",
-			   "kujawsko-pomorskie", "ma≥opolskie", "dolnoúlπskie",
-			   "lubelskie", "lubuskie", "mazowieckie", "opolskie", "podlaskie",
-			   "pomorskie", "úlπskie", "podkarpackie", "warmiÒsko-mazurskie",
-			   "zachodniopomorskie")
+provinces <- c("≈Ç√≥dzkie", "≈õwiƒôtokrzyskie", "wielkopolskie",
+               "kujawsko-pomorskie", "ma≈Çopolskie", "dolno≈õlƒÖskie",
+               "lubelskie", "lubuskie", "mazowieckie", "opolskie", "podlaskie",
+               "pomorskie", "≈õlƒÖskie", "podkarpackie", "warmi≈Ñsko-mazurskie",
+               "zachodniopomorskie")
 
 # substitute to names with polish signs
 shp@data$VARNAME_1 <- provinces
 
 # fortify data
 shpf <- fortify(shp, region="VARNAME_1")
+```
+
+```{r echo=F}
+# PROVINCES
 
 # create data.frame for map filling
-offersPerProvince <- data.frame(province = names(table(polish$province)),
-								n = as.vector(table(polish$province)))
+offersPerProvince <- data.frame(table(polish$province), stringsAsFactors=F)
+names(offersPerProvince) <- c("province", "n")
+```
 
-# create a plot
-theMap <- ggplot() +
-	# fill by number of offers
-	geom_map(data=offersPerProvince,
-			 aes(map_id=province, fill=n),
-			 map=shpf) +
-	# map contours
-	geom_path(data=shpf,
-			  aes(x=long, y=lat, group=id),
-			  colour="black", size=0.25) +
-	# mercator projection
-	coord_map(projection="mercator") +
-	# change theme
-	theme_bw() +
-	# change fill name and color
-	scale_fill_gradient("Liczba ofert", low = "grey90", high = "black") +
-	# remove unnecessary elements
-	theme(axis.ticks=element_blank(), panel.border=element_blank(),
-		  axis.text=element_blank(), panel.grid=element_blank(),
-		  axis.title=element_blank())
+```{r echo=F}
+# CITIES
 
-# plot
-theMap
+# create data.frame for map filling
+offersPerCity <- data.frame(table(polish$city), stringsAsFactors=F)
+names(offersPerCity) <- c("city", "n")
+
+# read cities geographical coordinates
+citiesGC <- read.csv("citiesGC.csv",
+                     stringsAsFactors=F, fileEncoding="WINDOWS-1250")
+
+# merge data.frames
+offersPerCity <- merge(offersPerCity, citiesGC, all.x=T)
+
+# get missing coordinates and save them
+if (sum(is.na(offersPerCity$lat)) != 0) {
+  for (i in which(is.na(offersPerCity$lat))) {
+    coords <- getGoogleMapsAddress(street="",
+                                   city=offersPerCity$city[i])
+    offersPerCity$lat[i] <- coords[1]
+    offersPerCity$long[i] <- coords[2]
+  }
+
+  offersPerCity %>%
+    select(-n) %>%
+    rbind(citiesGC) %>%
+    unique() %>%
+    arrange(city) %>%
+    write.csv("citiesGC.csv", row.names=F, fileEncoding="WINDOWS-1250")
+}
+
+# cut data
+offersPerCity <- offersPerCity %>%
+  mutate(interval = cut(offersPerCity$n,
+                        c(0, 1, 10, 50, 100, 200, 300, max(offersPerCity$n))))
+levels(offersPerCity$interval)[1] <- 1
+```
+
+```{r echo=F}
+# COMPANIES
+
+# create data.frame for map filling
+offersPerCompany <- data.frame(table(polish$employer), stringsAsFactors=F)
+names(offersPerCompany) <- c("company", "n")
+
+offersVsCompanies <- offersPerCompany %>%
+  group_by(n) %>%
+  summarise(companies = n_distinct(company))
+```
+
+## Plots
+```{r}
+# create province plot
+provinceMap <- ggplot() +
+  # fill by number of offers
+  geom_map(data=offersPerProvince,
+           aes(map_id=province, fill=n),
+           map=shpf) +
+  # map contours
+  geom_path(data=shpf,
+            aes(x=long, y=lat, group=id),
+            colour="black", size=0.25) +
+  # mercator projection
+  coord_map(projection="mercator") +
+  # change theme
+  theme_bw() +
+  # change fill name and color
+  scale_fill_gradient("Liczba ofert", low = "grey90", high = "black") +
+  # remove unnecessary elements
+  theme(axis.ticks=element_blank(), panel.border=element_blank(),
+        axis.text=element_blank(), panel.grid=element_blank(),
+        axis.title=element_blank()) +
+  # add title
+  ggtitle("Ile ofert w wojew√≥dztwie?")
+```
+
+```{r}
+# create city plot
+cityMap <- ggplot(offersPerCity, aes(x=long, y=lat, col=interval)) +
+  # color by number of offers
+  geom_point(alpha=0.7) +
+  # cities names
+  geom_text(data=offersPerCity[offersPerCity$n > 100, ],
+            aes(label=city), hjust=-0.1, show.legend=F) +
+  # map contours
+  geom_path(data=shpf,
+            aes(group=id),
+            colour="black", size=0.25) +
+  # mercator projection
+  coord_map(projection="mercator") +
+  # change theme
+  theme_bw() +
+  # change fill name and color
+  scale_color_brewer("Liczba ofert", palette="Dark2") +
+  # remove unnecessary elements
+  theme(axis.ticks=element_blank(), panel.border=element_blank(),
+        axis.text=element_blank(), panel.grid=element_blank(),
+        axis.title=element_blank(), legend.key=element_blank()) +
+  # add title
+  ggtitle("Ile ofert w mie≈õcie?")
+```
+
+```{r}
+# create company plot
+  companyScatter <- ggplot(offersVsCompanies, aes(x=companies, y=n)) +
+  # visualize data
+  geom_point() +
+  # company with most offers
+  geom_text(data=offersPerCompany[which.max(offersPerCompany$n), ],
+            aes(x=1, y=n, label=company), hjust=-0.1) +
+  # scale axes
+  scale_x_log10("Liczba firm", breaks=c(1, 2^(1:10))) +
+  scale_y_continuous("Liczba ofert", breaks=c(1, seq(5, 100, 5))) +
+  # remove unnecessary elements
+  theme(panel.grid.minor.x=element_blank()) +
+  # add title
+  ggtitle("Ile firm z≈Ço≈ºy≈Ço konkretnƒÖ liczbƒô ofert?")
+```
+
+## Plots
+```{r echo=F}
+# plots
+provinceMap
+cityMap
+companyScatter
+
+# # create company plot
+# companyBar <- ggplot(offersPerCompany, aes(x=company, y=n)) +
+#   # bars by number of offers
+#   geom_bar(stat="identity") +
+#   coord_flip()
 ```
