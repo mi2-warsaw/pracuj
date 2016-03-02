@@ -1,0 +1,92 @@
+---
+title: "Chmura nazw stanowisk"
+author: "KW"
+date: "03.03.2016"
+output:
+  html_document:
+    theme: spacelab
+    toc: yes
+  pdf_document:
+    toc: yes
+  word_document: default
+---
+
+
+```{r message = FALSE, echo = FALSE}
+# loading libs
+library("readr")
+library("dplyr")
+library("data.table")
+library("utils")
+library("ggplot2")
+library("knitr")
+```
+
+## Podsumowanie metody wybierajacej według wystepujących fraz oferty z puli ogłoszeń *`data.science`*
+
+Na podstawie ofert odseparowanych filtrem od wszystkich ogłoszeń zapisanych do pliku *`jobs.csv`* oraz stworzonych słownikow fraz, np. *`phrase_dic_eng.csv`* zliczane były oferty pasujace do poszczególnych fraz znajdujacych sie w slownikach. Graficzne podsumowanie przedstawia wykres: 
+
+
+```{r echo = FALSE}
+# switching dir to get some data
+setwd("../Filtr")
+
+# reading needed datasets
+filtered_data_w_dupli <- read_csv("filtered_data_w_dupli.csv" , col_names = TRUE)
+needed_complete_phrases <- read_csv("needed_complete_phrases.csv" , col_names = TRUE)
+
+# converting data.table column to vector of strings
+needed_complete_phrases <- as.vector(needed_complete_phrases$needed_complete_phrases)
+
+
+exeptions_phrases <- read_csv("exeptions_phrases.csv" , col_names = TRUE)
+
+# going back home
+setwd("../JobNamesCloud")
+
+# creating data.frame to accumulate numbers of offers for a given phrase
+num_of_nam <- c()
+
+
+
+for (NCP in needed_complete_phrases)  {
+ 
+ 
+  work_var <- mutate(filtered_data_w_dupli, JobNameIndicator = grepl(paste0(".*",NCP,".*"), href) )%>% summarize(sum(JobNameIndicator))
+  num_of_nam <- append(num_of_nam, work_var)
+  
+  #num_of_nam <- rbind(num_of_nam, as.data.frame(assign(paste0("",NCP), work_var)))
+  #filtered_data <- rbind(filtered_data, filtered_data1)
+}
+
+
+names(num_of_nam) <- needed_complete_phrases
+num_of_nam <- sapply(num_of_nam, 
+                function (x) {return(x)})
+
+df_row_names <- as.character(1:length(needed_complete_phrases))
+
+num_of_nam_df <- as.data.frame(num_of_nam, row.names = df_row_names, stringsAsFactors = FALSE)
+num_of_nam_df <- data.frame(needed_complete_phrases, num_of_nam_df)
+names(num_of_nam_df) <- c("phrase","num_of_offers")
+num_of_nam_df <-  arrange(num_of_nam_df, desc(num_of_offers))
+
+
+ggplot(num_of_nam_df, aes(x=factor(1), num_of_offers, fill=as.factor(paste(phrase, num_of_offers, sep = " - ")))) + geom_bar(stat="identity", width=1) + ggtitle("Czestosc wystepowania poszukiwanej frazy")+coord_polar(theta = "y") + theme(legend.position="right", legend.title=element_blank(), plot.title = element_text(lineheight=3, face="bold", color="black", size=12)) + xlab("")+ylab("")
+```
+
+## Tabela pzedstawiająca uporządkowane wartości z wykresu
+
+W tabeli zebrane zostały uporzadkowane frazy wraz z przypisaną im przez program ilością ofert:
+
+```{r echo = FALSE}
+num_of_nam_names <- c("Fraza", "Liczba ofert przyporzadkowanych frazie")
+
+kable(num_of_nam_df, digits = 1, col.names = num_of_nam_names)
+
+```
+
+
+
+
+
