@@ -149,7 +149,7 @@ citiesGC <- read.csv("citiesGC.csv",
 # merge data.frames
 offersPerCity <- merge(offersPerCity, citiesGC, all.x=T)
 
-# get missing coordinates and save them
+# get missing coordinates, update data and save it
 if (sum(is.na(offersPerCity$lat)) != 0) {
   for (i in which(is.na(offersPerCity$lat))) {
     coords <- getGoogleMapsAddress(street="",
@@ -159,18 +159,28 @@ if (sum(is.na(offersPerCity$lat)) != 0) {
   }
 
   offersPerCity %>%
-    select(-n) %>%
-    rbind(citiesGC) %>%
-    unique() %>%
-    arrange(city) %>%
-    write.csv("citiesGC.csv", row.names=F, fileEncoding="WINDOWS-1250")
+  select(-n) %>%
+  rbind(citiesGC) %>%
+  unique() %>%
+  arrange(city) %>%
+  write.csv("citiesGC.csv", row.names=F, fileEncoding="WINDOWS-1250")
 }
 
+# create data.frame with coordinates for jitter plot
+offersJittered <- polish %>%
+  filter(!is.na(city)) %>%
+  merge(offersPerCity, all.x=T) %>%
+  select(city, employer, lat, long) #%>%
+#  mutate(city = factor(city, levels=rev(levels(factor(city)))),
+#         company = factor(employer, levels=rev(levels(factor(employer))))) %>%
+#  select(-employer)
+names(offersJittered)[2] <- "company"
+
 # cut data
-offersPerCity <- offersPerCity %>%
-  mutate(interval = cut(offersPerCity$n,
-                        c(0, 1, 10, 50, 100, 200, 300, max(offersPerCity$n))))
-levels(offersPerCity$interval)[1] <- 1
+#offersPerCity <- offersPerCity %>%
+#  mutate(interval = cut(offersPerCity$n,
+#                        c(0, 1, 10, 50, 100, 200, 300, max(offersPerCity$n))))
+#levels(offersPerCity$interval)[1] <- 1
 
 # COMPANIES
 
@@ -182,9 +192,31 @@ offersVsCompanies <- offersPerCompany %>%
   group_by(n) %>%
   summarise(companies = n_distinct(company))
 
+# CITY COMPANIES FOR SHINY
+
+# group data by city and company for 
+offersCityCompany <- polish %>%
+  select(employer, city) %>%
+  group_by(city, employer) %>%
+  summarise(n = n()) %>%
+  as.data.frame() %>%
+  filter(complete.cases(.))
+names(offersCityCompany)[2] <- "company"
+
+# data for city selection
+selectCity <- polish %>%
+  select(employer, city) %>%
+  group_by(employer, city) %>%
+  summarise(n = n()) %>%
+  as.data.frame() %>%
+  merge(polish) %>%
+  select(employer, city, n) %>%
+  filter(complete.cases(.))
+names(selectCity)[1] <- "company"
+
 # PLOTS
 
-# create province plot
+# province plot
 provinceMap <- ggplot() +
   # fill by number of offers
   geom_map(data=offersPerProvince,
@@ -193,7 +225,7 @@ provinceMap <- ggplot() +
   # map contours
   geom_path(data=shpf,
             aes(x=long, y=lat, group=id),
-            colour="black", size=0.25) +
+            color="black", size=0.25) +
   # mercator projection
   coord_map(projection="mercator") +
   # change theme
@@ -207,17 +239,43 @@ provinceMap <- ggplot() +
   # add title
   ggtitle("Ile ofert w województwie?")
 
-# create city plot
-cityMap <- ggplot(offersPerCity, aes(x=long, y=lat, col=interval)) +
+# city plot
+cityMap <- ggplot(offersPerCity, aes(x=long, y=lat, size=n)) +
   # color by number of offers
-  geom_point(alpha=0.7) +
+  geom_point(alpha=0.5) +
   # cities names
   geom_text(data=offersPerCity[offersPerCity$n > 100, ],
-            aes(label=city), hjust=-0.1, show.legend=F) +
+            aes(label=city), hjust=-0.2, size=4, show.legend=F) +
   # map contours
   geom_path(data=shpf,
             aes(group=id),
-            colour="black", size=0.25) +
+            color="black", size=0.25) +
+  # mercator projection
+  coord_map(projection="mercator") +
+  # change theme
+  theme_bw() +
+  # change size scale
+  scale_size_continuous(
+    "Liczba ofert",
+    breaks=c(0, 1, 10, 50, 100, 200, 300, max(offersPerCity$n)),
+    trans="sqrt") +
+  # change fill name and color
+  scale_color_brewer("Liczba ofert", palette="Dark2") +
+  # remove unnecessary elements
+  theme(axis.ticks=element_blank(), panel.border=element_blank(),
+        axis.text=element_blank(), panel.grid=element_blank(),
+        axis.title=element_blank(), legend.key=element_blank()) +
+  # add title
+  ggtitle("Ile ofert w mieście?")
+
+# city jittered plot
+cityMapJitter <- ggplot(offersJittered, aes(x=long, y=lat)) +
+  # visualise data
+  geom_jitter(width=0.5, height=0.5, alpha=0.2) +
+  # map contours
+  geom_path(data=shpf,
+            aes(group=id),
+            color="black", size=0.25) +
   # mercator projection
   coord_map(projection="mercator") +
   # change theme
@@ -229,10 +287,20 @@ cityMap <- ggplot(offersPerCity, aes(x=long, y=lat, col=interval)) +
         axis.text=element_blank(), panel.grid=element_blank(),
         axis.title=element_blank(), legend.key=element_blank()) +
   # add title
-  ggtitle("Ile ofert w mieście?")
+  ggtitle("Koncentracja ofert")
 
-# create company plot
-  companyScatter <- ggplot(offersVsCompanies, aes(x=companies, y=n)) +
+# city dotplot
+cityDot <- ggplot(offersJittered, aes(x=0, y=city)) +
+  # visualise data
+  geom_dotplot(binaxis="y", method="histodot", stackdir="center", dotsize=0.1)
+
+# company dotplot
+companyDot <- ggplot(offersJittered, aes(x=0, y=company)) +
+  # visualise data
+  geom_dotplot(binaxis="y", method="histodot", stackdir="center", dotsize=0.1)
+
+# company plot
+companyScatter <- ggplot(offersVsCompanies, aes(x=companies, y=n)) +
   # visualize data
   geom_point() +
   # company with most offers
@@ -249,10 +317,7 @@ cityMap <- ggplot(offersPerCity, aes(x=long, y=lat, col=interval)) +
 # plots
 provinceMap
 cityMap
+cityMapJitter
+# cityDot useless
+# companyDot useless
 companyScatter
-
-# # create company plot
-# companyBar <- ggplot(offersPerCompany, aes(x=company, y=n)) +
-#   # bars by number of offers
-#   geom_bar(stat="identity") +
-#   coord_flip()
