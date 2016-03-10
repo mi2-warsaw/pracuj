@@ -85,6 +85,10 @@ setwd("../crawler")
   
 # 'href' selected for filtering due to universal structure .../position-name-city
 
+  # same ID killer
+  pracuj_data <- as.data.table(pracuj_data)
+  setkey(pracuj_data, id)
+  pracuj_data <- pracuj_data[!duplicated(pracuj_data),]
   
   # creating vector used to filter interesting offers
   needed_complete_phrases <- unlist(dic_list[grep(pattern = ".*\\phrase_dic\\.*", names(dic_list))], use.names = FALSE)
@@ -96,10 +100,17 @@ setwd("../crawler")
   # filtering according to phrases normally indicating data.science industry job   
   filtered_data <- data.frame()
   filtered_data_w_dupli <- data.frame()
+
+  
+  
   omited_data <- data.frame()
   for (NCP in needed_complete_phrases)  {
+    filtered_data1 <- 0
+    print(paste0(".*",NCP,".*"))
     filtered_data1 <- mutate(pracuj_data, DSIndicator = grepl(paste0(".*",NCP,".*"), href) )%>% filter(DSIndicator == TRUE)#%>%mutate(JobName = paste0(NCP)) 
     filtered_data <- rbind(filtered_data, filtered_data1)
+    
+    
   }
   
    
@@ -119,7 +130,8 @@ setwd("../crawler")
     nonDS_exeptions_omited_data <- rbind(nonDS_exeptions_omited_data, nonDS_exeptions_omited_data1)
     }
 
-  
+    
+
   
   
   # removing "Indicators" from dataset
@@ -135,6 +147,26 @@ setwd("../crawler")
   setkey(filtered_data, id)
   filtered_data <- filtered_data[!duplicated(filtered_data),]
   filtered_data <- as.data.frame(filtered_data)
+  
+  #filtering out months (onlvy valid for 2016)
+  offers_per_month <- data.frame()
+  opm_vect <- c()
+  OPM_total <- list()
+  i <- 1
+  for (NCP in needed_complete_phrases)  {
+    offers_per_month <- 0
+    filtered_data1 <- 0
+    filtered_data1 <- mutate(filtered_data, DSIndicator = grepl(paste0(".*",NCP,".*"), href) )%>% filter(DSIndicator == TRUE)#%>%mutate(JobName = paste0(NCP)) 
+    offers_per_month <- mutate(filtered_data1, date = as.Date(date, "%Y-%m-%d"),year = format(date, "%Y"), my_month = format(date, "%m")) %>%
+      group_by(my_month) %>%
+      summarise(sum(DSIndicator))
+      
+    assign(paste0(NCP), offers_per_month)
+   
+  }
+
+  
+ 
   
   
   

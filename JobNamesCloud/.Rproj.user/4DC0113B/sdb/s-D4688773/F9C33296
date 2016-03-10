@@ -1,0 +1,18 @@
+{
+    "contents" : "---\ntitle: \"Relacyjne Bazy Danych - praca domowa (wykład 1.)\"\nauthor: \"Konrad Więcko\"\ndate: \"5 March 2016\"\noutput:\n  pdf_document:\n    toc: yes\n \n---\n\n\n```{r message = FALSE, echo = FALSE}\n# loading libs\nlibrary(\"readr\")\nlibrary(\"dplyr\")\nlibrary(\"data.table\")\nlibrary(\"utils\")\nlibrary(\"ggplot2\")\nlibrary(\"knitr\")\n```\n\n\n# Zadanie 1.\n  Tabele przedstawione poniżej zawierają dane dotyczące kierowców (pierwszych 8) i bolidów F1. Tabele zostały przygotowane w oparciu o dane znalezione w internecie i mogą nei być dokładne\n\n```{r echo = FALSE}\n\nIdKierowcy <- 1:8\nIdAuta <- 1:4\nMarkaAuta <- c(\"Mercedes\", \"Ferrari\", \"Williams\", \"Red Bull Racing\")\nMocAuta <- c(850, NA, 850, NA)\nMasaAuta <- c(691, 702, 642, 691)\nPojemnoscSilnika <- c(1.6, 1.6, 1.6, 1.6)\nPaliwoAuta <- c(\"Petronas Primax\", NA, NA, \"Total Excellium\")\nImieKierowcy <- c(\"Lewis\", \"Nico\", \"Sebastian\", \"Kimi\", \"Valterri\", \"Felipe\", \"Daniil\", \"Daniel\")\nNazwiskoKierowcy <- c(\"Hamilton\", \"Rosberg\", \"Vettel\", \"Raikkonen\", \"Bottas\", \"Massa\", \"Kvyat\", \"Ricciardo\")\n\nIdAuta_IdKierowcy <- c(1,1,2,2,3,3,4,4)\n\nKierowcy <- data.frame(IdKierowcy, ImieKierowcy, NazwiskoKierowcy, IdAuta_IdKierowcy)\nAuta <- data.frame(IdAuta, MarkaAuta, MocAuta, MasaAuta, PojemnoscSilnika, PaliwoAuta)\n\n\n\n```\n\n\n\n\n```{r echo = FALSE}\nNazwy_kierowcy <- c(\"Id Kierowcy\", \"Imię\", \"Nazwisko\", \"Id Samochodu\")\nNazwy_aut <- c(\"Id Samochodu\", \"Marka\", \"Moc MAx.[KM]\", \"Masa MIN. [kg]\", \"Pojemość silnika [l]\", \"Nazwa paliwa\")\n\nkable(Kierowcy, digits = 1, col.names = Nazwy_kierowcy, caption = \"8 pierwszych kierowców z rankingu F1\")\n\nkable(Auta, digits = 1, col.names = Nazwy_aut, caption = \"Samochody, którymi jeżdżą kierowcy z TOP8 F1. \")\n\n```\n\nKluczem głównym Tabeli 1. (dla przedstawionych danych - imion i nazwisko kierowców) może być *`Id Kierowcy`*, *`Imię`* lub *`Nazwisko`*, natomiast kluczem głównym Tabeli 2. może być zarówno *`Id Samochodu`*, jak i  *`Marka`*. W podanym przykładzie patrząc na Tabelę 1. jako klucz główny Tabeli 2. określono *`Id Samochodu`*. Kluczem obcym w Tabeli jest *`Id Samochodu`*.\n\n\\newpage\n\n# Zadanie 2.\n\nDo przykładów baz danych obecnych w moim życiu należy, np.:\n\n * Książka telefoniczna,\n \n * Skrzynka pocztowa,\n \n * Wszelkiego rodzaju rozkłady jazdy (autobusów, tramwajów, pociągów,..),\n \n * System edux.\n ",
+    "created" : 1457178676673.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1840921631",
+    "id" : "F9C33296",
+    "lastKnownWriteTime" : 1457184246,
+    "path" : "D:/PJATK/Relacyjne Bazy Danych/Zadania domowe wykl_1.Rmd",
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "type" : "r_markdown"
+}
