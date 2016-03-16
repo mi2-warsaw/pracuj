@@ -3,6 +3,7 @@ library("dplyr", lib.loc="D:/Program Files/R/R-devel/library")
 library("readr", lib.loc="D:/Program Files/R/R-devel/library")
 library("utils", lib.loc="D:/Program Files/R/R-devel/library")
 library("data.table", lib.loc="D:/Program Files/R/R-devel/library")
+library("lubridate")
 
 
 #swapping dir to get some data
@@ -148,33 +149,93 @@ setwd("../crawler")
   filtered_data <- filtered_data[!duplicated(filtered_data),]
   filtered_data <- as.data.frame(filtered_data)
   
-  #filtering out months (onlvy valid for 2016)
-  offers_per_month <- data.frame()
-  opm_vect <- c()
-  OPM_total <- list()
+  #filtering out months (only valid for 2016)
+  offers_per_month <- data.frame(c(0), c(0))
+  names(offers_per_month) <- c("month", "number_of_offers")
+  # looking for latest month in offers were posted
+    last_month <- mutate(filtered_data, date = as.Date(date, "%Y-%m-%d"), my_month = format(date, "%m")) %>%
+                  summarise(max(my_month))
+  names(last_month) <- c("month_lim")
+  # Making reference data.frame format in which number of offers per month should be stored
+  month_ref_col <- c(1:last_month$month_lim)
+  opm_ref_col <- c(replicate(last_month$month_lim, 0))
+    
+    ref_offers_per_month <- data.frame(month_ref_col, opm_ref_col)
+  
+  #going for JobNamesCloud dir!
+  setwd("JNCdir")
+  
+  opm_df <- data.frame(month_ref_col, replicate(length(needed_complete_phrases), opm_ref_col))
+  names_opm_df <- needed_complete_phrases
+  names_opm_df <- c("month", names_opm_df)
+  names(opm_df) <- names_opm_df
+  offers_to_plot <- data.frame()
+  offers_to_plot1 <- data.frame()
+  job_name <- c()
   i <- 1
-  for (NCP in needed_complete_phrases)  {
+  per_month_names <- c()
+  for (NCP in needed_complete_phrases)  
+    {
     offers_per_month <- 0
     filtered_data1 <- 0
+    job_name <- NULL
+    offers_to_plot1 <- NULL
     filtered_data1 <- mutate(filtered_data, DSIndicator = grepl(paste0(".*",NCP,".*"), href) )%>% filter(DSIndicator == TRUE)#%>%mutate(JobName = paste0(NCP)) 
     offers_per_month <- mutate(filtered_data1, date = as.Date(date, "%Y-%m-%d"),year = format(date, "%Y"), my_month = format(date, "%m")) %>%
       group_by(my_month) %>%
       summarise(sum(DSIndicator))
+    
       
     assign(paste0(NCP), offers_per_month)
-   
+    offers_per_month$my_month <- as.integer(offers_per_month$my_month) 
+    
+    
+    
+    for(q in 1:length(offers_per_month$my_month)){
+      job_name <- c(job_name, NCP)
+    }
+    offers_to_plot1 <-  data.frame(offers_per_month, job_name)
+    offers_to_plot <- rbind(offers_to_plot, offers_to_plot1)
+    
+    if (length(offers_per_month$my_month) == length(opm_df$month)) {
+    opm_df[, (i+1)] <- offers_per_month$`sum(DSIndicator)`
+    
+    } else {
+      for(n in length(offers_per_month$my_month)) {
+        opm_df[(offers_per_month$my_month), (i+1)] <- offers_per_month$`sum(DSIndicator)`
+      }
+      
+    
+    }
+    
+    
+    
+    per_month_names[i] <- paste0(NCP,"_per_month")
+    i <- i+1
+    
   }
 
+  #heading for home dir
+ setwd("../")
   
  
+ 
+  # switching digits to months
+ month_names <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+ for (r in 1:length(opm_df$month)) {
+   opm_df$month[r] <- month_names[r] 
   
-  
+ }
+ 
+ 
   
   # writing solution to files
   write_csv(filtered_data, "pracuj_filtered.csv")
   write_csv( nonDS_exeptions_omited_data, "nonDS_exeptions_omited_data.csv")
   write_csv(nonDS_primarily_omited_data,  "nonDS_primarily_omited_data.csv")
   write_csv(filtered_data_w_dupli, "filtered_data_w_dupli.csv")
+  write_csv(opm_df, "job_names_per_month.csv")
   
   needed_complete_phrases <- as.data.frame(needed_complete_phrases)
   write_csv(needed_complete_phrases, "needed_complete_phrases.csv")

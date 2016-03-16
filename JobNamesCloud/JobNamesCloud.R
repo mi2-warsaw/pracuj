@@ -4,6 +4,7 @@ library("dplyr", lib.loc="~/R/win-library/3.3")
 library("data.table", lib.loc="D:/Program Files/R/R-devel/library")
 library("utils", lib.loc="D:/Program Files/R/R-devel/library")
 library("ggplot2")
+library("rCharts")
 # switching dir to get some data
 setwd("../Filtr")
 
@@ -24,9 +25,9 @@ setwd("../JobNamesCloud")
 num_of_nam <- c()
 
 # same ID killer
-pracuj_data <- as.data.table(pracuj_data)
-setkey(pracuj_data, id)
-pracuj_data <- pracuj_data[!duplicated(pracuj_data),]
+#pracuj_data <- as.data.table(pracuj_data)
+#setkey(pracuj_data, id)
+#pracuj_data <- pracuj_data[!duplicated(pracuj_data),]
 
 
 for (NCP in needed_complete_phrases)  {
@@ -56,5 +57,23 @@ ggplot(num_of_nam_df, aes(x=factor(1), num_of_offers, fill=as.factor(paste(phras
 
 num_of_nam_df$phrase <- reorder(num_of_nam_df$phrase, num_of_nam_df$num_of_offers, mean)
 ggplot(num_of_nam_df, aes(x=phrase, y=num_of_offers, fill=as.factor(paste(phrase, num_of_offers, sep = " - ")))) + geom_bar(stat="identity", width=1) + ggtitle("Czestosc wystepowania poszukiwanej frazy")+ theme(legend.position="right", legend.title=element_blank(), plot.title = element_text(lineheight=3, face="bold", color="black", size=12)) + xlab("")+ylab("") + coord_flip() +scale_y_sqrt(breaks=c(0,1,5,10,50,100,200,500))
+
+setwd("../Filtr")
+table_data <- read_csv("job_names_per_month_plot.csv", col_names = TRUE)
+
+job_names_cloud_names <- names(table_data)
+
+
+
+
+plot1 <- nPlot(number_of_offers_per_month ~ month, group = "phrase", data = table_data, type = "scatterChart")
+
+plot1$xAxis(axisLabel = 'Month')
+plot1$yAxis(axisLabel = 'Frequency of appereance')
+
+plot1$set(width = 750, height = 590)
+plot1$save("rCharts1.html", standalone=TRUE)
+
+setwd("../JobNamesCloud")
 # saving solution to file
 write_csv(num_of_nam_df, "JobNamesCloud.csv")
