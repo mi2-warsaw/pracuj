@@ -7,6 +7,7 @@ library(tidyr)
 library(maptools)
 library(rgeos)
 library(SmarterPoland) # contains ggplot2
+library(portfolio)
 
 # read data to analyze
 df <- read.csv("../Filtr/pracuj_filtered.csv",
@@ -192,9 +193,19 @@ offersVsCompanies <- offersPerCompany %>%
   group_by(n) %>%
   summarise(companies = n_distinct(company))
 
+# TREE MAP
+
+# group data by province and city, summarise employers and offers
+treeData <- polish %>%
+  filter(complete.cases(.)) %>%
+  select(employer, city, province) %>%
+  group_by(province, city) %>%
+  summarise(nEmp = n_distinct(employer),
+            nOff = n())
+
 # CITY COMPANIES FOR SHINY
 
-# group data by city and company for 
+# group data by city and company
 offersCityCompany <- polish %>%
   select(employer, city) %>%
   group_by(city, employer) %>%
@@ -321,3 +332,9 @@ cityMapJitter
 # cityDot useless
 # companyDot useless
 companyScatter
+
+# treemap plot
+source("my_tree.R")
+treeMap <- my.tree(id=treeData$city, area=treeData$nEmp,
+                   group=treeData$province, color=treeData$nOff,
+                   lab=c("group"=T, "id"=T), main="Mapa ofert")
