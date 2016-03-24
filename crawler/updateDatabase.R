@@ -5,8 +5,6 @@ library(RPostgreSQL)
 dbname = "pracuj"
 user = "pracuj"
 host = "services.mini.pw.edu.pl"
-host = "192.168.137.38"
-
 
 
 sterownik <- dbDriver("PostgreSQL")
