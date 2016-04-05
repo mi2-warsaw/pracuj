@@ -218,15 +218,18 @@ setwd("../crawler")
   #heading for home dir
  setwd("../")
   
- 
+ # Naming offers_to_plot
+ names(offers_to_plot) <- c("month", "number_of_offers_per_month", "phrase")
  
   # switching digits to months
  month_names <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
  for (r in 1:length(opm_df$month)) {
    opm_df$month[r] <- month_names[r] 
-  
+   
  }
+ 
+
  
  
   
@@ -236,6 +239,7 @@ setwd("../crawler")
   write_csv(nonDS_primarily_omited_data,  "nonDS_primarily_omited_data.csv")
   write_csv(filtered_data_w_dupli, "filtered_data_w_dupli.csv")
   write_csv(opm_df, "job_names_per_month.csv")
+  write_csv(offers_to_plot, "job_names_per_month_plot.csv")
   
   needed_complete_phrases <- as.data.frame(needed_complete_phrases)
   write_csv(needed_complete_phrases, "needed_complete_phrases.csv")
