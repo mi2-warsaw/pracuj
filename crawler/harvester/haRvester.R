@@ -21,7 +21,6 @@ host = "services.mini.pw.edu.pl"
 sterownik <- dbDriver("PostgreSQL")
 polaczenie <- dbConnect(sterownik, dbname = dbname, user = user, password = password, host = host)
 
-maxid <- dbGetQuery(polaczenie, "SELECT max(data) FROM offers")[1,1]
 total <- 0
 indiv_ID <- c(0,0,0)
 indiv_ID_TF <- c(FALSE, FALSE, FALSE)
