@@ -159,3 +159,4 @@ links <- na.omit(links)
 
 #write_csv(jobs, "jobs_6_04.csv")
 
+# dbGetQuery(polaczenie, "SELECT * FROM offers")
