@@ -1,6 +1,6 @@
 # Dataset from pracuj.pl website
 
-How to install ans use this package?
+How to install and use this package?
 
 ```
 install_github("mi2-warsaw/pracuj/pracuj")
