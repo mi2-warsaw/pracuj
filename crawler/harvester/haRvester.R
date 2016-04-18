@@ -7,7 +7,7 @@ library(RPostgreSQL)
 
 
 # define amount of pages to scrap
-nOfPages <- 477
+nOfPages <- 100
 mainPercentage <- c()
 subPercentage <- c()
 
@@ -21,6 +21,7 @@ host = "services.mini.pw.edu.pl"
 sterownik <- dbDriver("PostgreSQL")
 polaczenie <- dbConnect(sterownik, dbname = dbname, user = user, password = password, host = host)
 
+maxid <- dbGetQuery(polaczenie, "SELECT max(data) FROM offers")[1,1]
 total <- 0
 indiv_ID <- c(0,0,0)
 indiv_ID_TF <- c(FALSE, FALSE, FALSE)
@@ -54,17 +55,11 @@ links <- na.omit(links)
     
     
     # reading offer ID
-    IDsep <- grepl(pattern = ".*oferta;.*", currentLink)
-    
-    if (IDsep == TRUE){
-    id <- gsub(pattern = ".*oferta;\\.*", replacement =  "", currentLink)  
-    } else {
-    id <- gsub(pattern = ".*oferta,\\.*", replacement =  "", currentLink)  
-    }
+    id <- gsub(pattern = gsub(pattern = "([[:digit:]]*)$", replacement = "", currentLink), replacement = "", currentLink)
     
     czyjest <- as.numeric( dbGetQuery(polaczenie, paste0("SELECT count(*) FROM offers where id = '",id,"'")))
     
-    #scrappingKiller
+    #scrappingKiller per page
     indiv_ID_df$indiv_ID[1]<- indiv_ID_df$indiv_ID[2]
     indiv_ID_df$indiv_ID_TF[1] <- indiv_ID_df$indiv_ID_TF[2]
     
@@ -74,13 +69,9 @@ links <- na.omit(links)
     indiv_ID_df$indiv_ID[3]<- indiv_ID_df$indiv_ID[3] + 1
     if (czyjest == 0) {
       indiv_ID_df$indiv_ID_TF[3] <- FALSE
-      print(paste0(indiv_ID_df$indiv_ID[1],"  ", indiv_ID_df$indiv_ID[2],"  ", indiv_ID_df$indiv_ID[3]))
-      print(paste0(indiv_ID_df$indiv_ID_TF[1], "  ",indiv_ID_df$indiv_ID_TF[2], "  ",indiv_ID_df$indiv_ID_TF[3]))
       
     } else if (czyjest > 0){
       indiv_ID_df$indiv_ID_TF[3] <- TRUE
-      print(paste0(indiv_ID_df$indiv_ID[1], "  ",indiv_ID_df$indiv_ID[2], "  ",indiv_ID_df$indiv_ID[3]))
-      print(paste0(indiv_ID_df$indiv_ID_TF[1], "  ",indiv_ID_df$indiv_ID_TF[2], "  ",indiv_ID_df$indiv_ID_TF[3], "  ",id))
     }
     
     if (all(indiv_ID_df$indiv_ID_TF) == TRUE) {break}
@@ -113,7 +104,9 @@ links <- na.omit(links)
     
         # reading offer details
         description <- html_nodes(currentLinkSource, css = "#offCont") %>% html_text()
-        description <- gsub(pattern = "\n", replacement = " ", description) 
+        description <- gsub(pattern = "\n", replacement = " ", description)
+        description <- gsub(pattern = "\r", replacement = "", description)
+        description <- gsub(pattern = "\t", replacement = "", description)
         description <- gsub(pattern = "'", replacement =  " ", description)
     
         # reading date of the offer announcment
@@ -149,7 +142,7 @@ links <- na.omit(links)
                       location,"','",
                       grade,"','",
                       employer,"','",
-                       description,
+                      description,
                       "')"))
         
     }    
@@ -157,6 +150,5 @@ links <- na.omit(links)
 
 }
 
-#write_csv(jobs, "jobs_6_04.csv")
+#write_csv(jobs, "jobs.csv")
 
-# dbGetQuery(polaczenie, "SELECT * FROM offers")
