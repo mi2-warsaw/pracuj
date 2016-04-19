@@ -4,10 +4,7 @@
 \alias{get_dbms}
 \title{Collecting DBMS popularity data}
 \usage{
-get_dbms(type = c("all", Content store", "Document store", "Event Store",
-"Graph DBMS", "Key-value store", "Multivalue DBMS", "Native XML DBMS",
-"Navigational DBMS", "Object oriented DBMS", "RDF store", "Relational DBMS",
-"Search engine", "Time Series DBMS", "Wide column store"))
+get_dbms(type = c("all", Content store", "Document store", "Event Store", "Graph DBMS", "Key-value store", "Multivalue DBMS", "Native XML DBMS", "Navigational DBMS", "Object oriented DBMS", "RDF store", "Relational DBMS", "Search engine", "Time Series DBMS", "Wide column store"))
 }
 \arguments{
 \item{type}{of DBMS; default: "all"}
