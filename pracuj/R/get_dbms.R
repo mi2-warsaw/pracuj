@@ -2,7 +2,7 @@
 #'
 #' Function \code{get_dbms} scrapes data from db-engines.com
 #'
-#' @usage get_dbms(type = c("all", Content store", "Document store", "Event Store", "Graph DBMS", "Key-value store", "Multivalue DBMS", "Native XML DBMS", "Navigational DBMS", "Object oriented DBMS", "RDF store", "Relational DBMS", "Search engine", "Time Series DBMS", "Wide column store"))
+#' @usage get_dbms(type = c("all", "Content store", "Document store", "Event Store", "Graph DBMS", "Key-value store", "Multivalue DBMS", "Native XML DBMS", "Navigational DBMS", "Object oriented DBMS", "RDF store", "Relational DBMS", "Search engine", "Time Series DBMS", "Wide column store"))
 #'
 #' @param type of DBMS; default: "all"
 #'
@@ -10,7 +10,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Top 10 Relational Database Management Systems
+#' Top 10 Relational Database Management Systems
 #' dbms <- get_dbms("Relational DBMS")
 #' head(dbms, 10)
 #' }
