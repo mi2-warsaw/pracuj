@@ -27,7 +27,7 @@ check_frequency <- function(offers, patterns = c("data sci",
   no <- sapply(seq_along(patterns), function(i){
     length(grep(offers, pattern = patterns[i], ignore.case = case[i]))
   })
-  df <- data.frame(no = no, freq = no/nrow(dat))
+  df <- data.frame(no = no, freq = no/length(offers))
   rownames(df) <- patterns
   df
 }
