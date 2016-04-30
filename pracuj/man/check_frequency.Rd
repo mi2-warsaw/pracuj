@@ -24,7 +24,7 @@ Function \code{check_frequency} checks frequencies of selected key-words.
 }
 \examples{
 \dontrun{
-offers <- get_offers()
+offers <- get_offers(description=TRUE)
 check_frequency(offers$description)
 }
 }

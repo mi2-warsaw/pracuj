@@ -10,7 +10,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' offers <- get_offers()
+#' offers <- get_offers(description=TRUE)
 #' check_frequency(offers$description)
 #' }
 #' @author Przemyslaw Biecek
