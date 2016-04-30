@@ -7,7 +7,10 @@
 check_frequency(offers, patterns = c("data sci", "stat.st", "anality",
   "analiz. danych", "excel", "[^A-Za-z]SAS",
   "[^0-9][^0-9A-Za-zóÓ+]R[^0-9A-Za-zóÓęĘśŚćĆ&“”/ö][^&]",
-  "big.+data", "data.+mining"), case = c(T, T, T, T, T, T, F, T, T))
+  "big.+data", "data.+mining", "tableau", "SPSS", "stata", "cognos", "azure",
+  "aws", "machine learning", "spark", "hadoop", "matlab", "scikit", "python",
+  "wizualizacj"), case = c(T, T, T, T, T, T, F, T, T, T, T, T, T, T, T, T, T,
+  T, T, T, T, T))
 }
 \arguments{
 \item{offers}{vector with offrs descriptions}

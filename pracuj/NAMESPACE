@@ -2,4 +2,5 @@
 
 export(check_frequency)
 export(get_dbms)
+export(get_ids)
 export(get_offers)
