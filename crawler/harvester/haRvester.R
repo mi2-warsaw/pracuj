@@ -95,7 +95,7 @@ links <- na.omit(links)
         # reading job grade
         grade <- html_nodes(currentLinkSource, css = ".offerTop__cnt_main_details_item--second") %>% html_text()
         # removing "\n" markers from char
-        grade <- gsub(pattern = "\n", replacement = "", grade )
+        grade <- gsub(pattern = "\n", replacement = " ", grade )
         grade <- gsub(pattern = "'", replacement =  " ", grade)
     
         # reading locations
@@ -105,8 +105,8 @@ links <- na.omit(links)
         # reading offer details
         description <- html_nodes(currentLinkSource, css = "#offCont") %>% html_text()
         description <- gsub(pattern = "\n", replacement = " ", description)
-        description <- gsub(pattern = "\r", replacement = "", description)
-        description <- gsub(pattern = "\t", replacement = "", description)
+        description <- gsub(pattern = "\r", replacement = " ", description)
+        description <- gsub(pattern = "\t", replacement = " ", description)
         description <- gsub(pattern = "'", replacement =  " ", description)
     
         # reading date of the offer announcment
