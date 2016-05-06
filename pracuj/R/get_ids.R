@@ -28,5 +28,5 @@ get_ids <- function(offers, patterns = c("data sci",
   no <- lapply(seq_along(patterns), function(i){
     grep(offers, pattern = patterns[i], ignore.case = case[i])
   })
-  unlist(no)
+  sort(unique(unlist(no)))
 }
