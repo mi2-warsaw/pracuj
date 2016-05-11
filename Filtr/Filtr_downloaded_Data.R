@@ -8,7 +8,7 @@ library("RPostgreSQL")
 
 dbname = "pracuj"
 user = "pracuj"
-password = "haslopracownikapracuj"
+password = "haslo"
 host = "services.mini.pw.edu.pl"
 
 
