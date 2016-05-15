@@ -1,0 +1,7 @@
+              freq  pakiet
+anova   0.08510638   anova
+caret   0.20212766   caret
+ggplot2 0.29787234 ggplot2
+stringi 0.12765957 stringi
+dplyr   0.32978723   dplyr
+knitr   0.27659574   knitr
