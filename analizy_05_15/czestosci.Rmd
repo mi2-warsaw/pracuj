@@ -2,7 +2,10 @@
 title: "Analiza pracuj.pl"
 author: "pbi"
 date: "15 May 2016"
-output: html_document
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
 ---
 
 ```{r setup, include=FALSE}
@@ -102,7 +105,7 @@ ggplot(dat, aes(tool_no,no, fill=tool)) +
   coord_flip() + theme_bw() + theme(legend.position="none") +
   ylab("Liczba ofert") + xlab("")
 
-ggplot(dat[c(2:17,19),], aes(tool_no, no, fill=tool)) +
+ggplot(dat[c(2:17,19),], aes(tool_no, no)) +
   geom_bar(stat="identity") +
   coord_flip() + theme_bw() + theme(legend.position="none") +
   ylab("Liczba ofert") + xlab("")
