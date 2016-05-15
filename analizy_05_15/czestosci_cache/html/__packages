@@ -2,3 +2,5 @@ base
 DBI
 RPostgreSQL
 pracuj
+archivist
+ggplot2
