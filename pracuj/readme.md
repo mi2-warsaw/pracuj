@@ -11,3 +11,8 @@ head(short)
 long <- get_offers(description=TRUE)
 head(long)
 ```
+
+## UseCase
+
+https://rawgit.com/mi2-warsaw/pracuj/master/analizy_05_15/czestosci.html
+
