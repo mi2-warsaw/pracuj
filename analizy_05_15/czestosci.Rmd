@@ -1,0 +1,101 @@
+---
+title: "Analiza pracuj.pl"
+author: "pbi"
+date: "15 May 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Pobierz dane
+
+Nalezy najpierw zainstalować pakiet `pracuj` ze strony https://github.com/mi2-warsaw/pracuj/tree/master/pracuj.
+
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
+library(pracuj)
+offers <- get_offers(description = TRUE)
+```
+
+## Tylko analitycy (w position jest analyst/analityk)
+
+Wybieramy tylko oferty, które w position mają wpisane Analityk/Analyst.
+
+Z jakich miast są te oferty? 
+Wybieramy 9 najpopularniejszych miast. 
+
+```{r, warning=FALSE, message=FALSE}
+library(pracuj)
+library(dplyr)
+library(ggplot2)
+
+offers %>%
+	filter(grepl(position, pattern="(analyst)|(analityk)", ignore.case = TRUE)) -> 
+	analitycy
+
+dim(analitycy)
+
+tt <- table(gsub(gsub(analitycy$location, pattern = " ", replacement = ""), pattern="[,(].*", replacement = ""))[c("Warszawa","Kraków","Poznań","Wrocław","Gdańsk","Łódź","Zabierzów","Katowice","Gdynia")]
+df <- data.frame(as.table(tt))
+df$Var1 <- reorder(df$Var1, df$Freq, median)
+
+ggplot(df, aes(Var1, fill=Var1, y=Freq)) +scale_fill_discrete(name="") +
+  geom_bar(stat="identity") + theme_bw() + xlab("")+ylab("Liczba ofert")+coord_flip() + theme(legend.position="none")
+
+```
+
+## Chmura słów
+
+Kim są pracodawcy szukający analityków?
+
+```{r, warning=FALSE, message=FALSE, fig.width=12, fig.height=12}
+
+library(wordcloud)
+tmp <- analitycy$employer
+tmp <- gsub(tmp, pattern = "sp. ?z o. ?o.", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = "polska", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = "s.?a.?", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = ",.*", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = "\\(.*", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = "^ +", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = " +$", replacement = "", ignore.case = TRUE)
+pracodawca <- table(tmp)
+wordcloud(names(pracodawca), pracodawca, rot.per = 0)
+
+```
+
+## Jakie umiejętności są wymieniane w ofertach pracy?
+
+W ogłoszeniach dla analityków dominuje Excel, na drugim miejscu jest SQL. 
+
+Drugi wykres przedstawia umiejętności wymienione po usunięciu tych dwóch najpopularniejszych umiejetności.
+
+
+```{r, warning=FALSE, message=FALSE}
+
+dat <- check_frequency(analitycy$description,
+			patterns = c( "excel", "[^A-Za-z]SAS", "[^0-9][^0-9A-Za-zóÓ+]R[^0-9A-Za-zóÓęĘśŚćĆ&“”/ö][^&]", 
+    "big.+data", "data.+mining", "tableau", "SPSS", "stata", 
+    "cognos", "azure", "machine learning", "spark", "hadoop", 
+    "matlab", "scikit", "python", "wizualizacj","sql","oracle"), 
+    case = c( T, T, F, T, T, T, T, T, T, T, T, T, T, T, T, T, 
+    T, T,T))
+
+dat$tool <- c("Excel", "SAS", "R", "Big Data", "Data Mining",
+              "Tableau","SPSS","Stata","Cognos","Azure","Machine Learning","Spark","Hadoop","Matlab","SciKit","Python","Wizualizacja danych","SQL","Oracle")
+rownames(dat) <- dat$tool_no <- paste(dat$tool, dat$no)
+dat$tool_no <- reorder(dat$tool_no, dat$freq, median)
+
+ggplot(dat, aes(tool_no,no, fill=tool)) +
+  geom_bar(stat="identity") +
+  coord_flip() + theme_bw() + theme(legend.position="none") +
+  ylab("Liczba ofert") + xlab("")
+
+ggplot(dat[c(2:17,19),], aes(tool_no, no, fill=tool)) +
+  geom_bar(stat="identity") +
+  coord_flip() + theme_bw() + theme(legend.position="none") +
+  ylab("Liczba ofert") + xlab("")
+
+```
+
