@@ -9,6 +9,16 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r archivist, warning=FALSE, message=FALSE}
+library(archivist)
+library(ggplot2)
+
+# store everything in the archivist repo
+addHooksToPrint(class=c("ggplot"),
+                 repoDir = "../arepo", 
+                 repo = "pracuj", user = "mi2-warsaw", subdir = "arepo")
+```
+
 ## Pobierz dane
 
 Nalezy najpierw zainstalować pakiet `pracuj` ze strony https://github.com/mi2-warsaw/pracuj/tree/master/pracuj.
