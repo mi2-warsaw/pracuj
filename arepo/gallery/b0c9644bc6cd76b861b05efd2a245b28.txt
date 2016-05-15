@@ -1,0 +1,7 @@
+               no        freq        tool        tool_no
+SAS 40         40 0.013076169         SAS         SAS 40
+R 43           43 0.014056881           R           R 43
+Big Data 73    73 0.023864008    Big Data    Big Data 73
+Data Mining 20 20 0.006538084 Data Mining Data Mining 20
+Tableau 20     20 0.006538084     Tableau     Tableau 20
+SPSS 15        15 0.004903563        SPSS        SPSS 15

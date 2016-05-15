@@ -1,0 +1,7 @@
+      Var1 Freq
+1 Warszawa 1050
+2   Kraków  645
+3   Poznań  126
+4  Wrocław  341
+5   Gdańsk   77
+6     Łódź  125
