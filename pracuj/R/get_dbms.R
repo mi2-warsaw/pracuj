@@ -33,7 +33,7 @@ get_dbms <- function(type = "all") {
   # create data frame
   dbms <- data_frame(name = html_text(nameNodes),
                      model = html_text(modelNodes),
-                     score = html_text(scoreNodes) %>% as.numeric)
+                     score = html_text(scoreNodes) %>% as.numeric())
   
   # clear data
   dbms <- dbms %>%
