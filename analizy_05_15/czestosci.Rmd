@@ -1,0 +1,159 @@
+---
+title: "Analiza pracuj.pl"
+author: "pbi"
+date: "15 May 2016"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, results='asis', warning=FALSE, message=FALSE)
+```
+
+```{r archivist, warning=FALSE, message=FALSE}
+library(archivist)
+library(ggplot2)
+
+# store everything in the archivist repo
+addHooksToPrint(class=c("ggplot"),
+                 repoDir = "../arepo", 
+                 repo = "pracuj", user = "mi2-warsaw", subdir = "arepo")
+```
+
+## Pobierz dane
+
+Nalezy najpierw zainstalować pakiet `pracuj` ze strony https://github.com/mi2-warsaw/pracuj/tree/master/pracuj.
+
+```{r, cache=TRUE, warning=FALSE, message=FALSE}
+library(pracuj)
+offers <- get_offers(description = TRUE)
+```
+
+## Tylko analitycy (w position jest analyst/analityk)
+
+Wybieramy tylko oferty, które w position mają wpisane Analityk/Analyst.
+
+Z jakich miast są te oferty? 
+Wybieramy 9 najpopularniejszych miast. 
+
+```{r, warning=FALSE, message=FALSE}
+library(pracuj)
+library(dplyr)
+library(ggplot2)
+
+offers %>%
+	filter(grepl(position, pattern="(analyst)|(analityk)", ignore.case = TRUE)) -> 
+	analitycy
+
+dim(analitycy)
+
+tt <- table(gsub(gsub(analitycy$location, pattern = " ", replacement = ""), pattern="[,(].*", replacement = ""))[c("Warszawa","Kraków","Poznań","Wrocław","Gdańsk","Łódź","Zabierzów","Katowice","Gdynia")]
+df <- data.frame(as.table(tt))
+df$Var1 <- reorder(df$Var1, df$Freq, median)
+
+ggplot(df, aes(Var1, fill=Var1, y=Freq)) +scale_fill_discrete(name="") +
+  geom_bar(stat="identity") + theme_bw() + xlab("")+ylab("Liczba ofert")+coord_flip() + theme(legend.position="none")
+
+```
+
+## Chmura słów
+
+Kim są pracodawcy szukający analityków?
+
+```{r, warning=FALSE, message=FALSE, fig.width=12, fig.height=12}
+
+library(wordcloud)
+tmp <- analitycy$employer
+tmp <- gsub(tmp, pattern = "sp. ?z o. ?o.", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = "polska", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = "s.?a.?", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = ",.*", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = "\\(.*", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = "^ +", replacement = "", ignore.case = TRUE)
+tmp <- gsub(tmp, pattern = " +$", replacement = "", ignore.case = TRUE)
+pracodawca <- table(tmp)
+wordcloud(names(pracodawca), pracodawca, rot.per = 0)
+
+```
+
+## Jakie umiejętności są wymieniane w ofertach pracy?
+
+W ogłoszeniach dla analityków dominuje Excel, na drugim miejscu jest SQL. 
+
+Drugi wykres przedstawia umiejętności wymienione po usunięciu tych dwóch najpopularniejszych umiejetności.
+
+
+```{r, warning=FALSE, message=FALSE}
+
+dat <- check_frequency(analitycy$description,
+			patterns = c( "excel", "[^A-Za-z]SAS", "[^0-9][^0-9A-Za-zóÓ+]R[^0-9A-Za-zóÓęĘśŚćĆ&“”/ö][^&]", 
+    "big.+data", "data.+mining", "tableau", "SPSS", "stata", 
+    "cognos", "azure", "machine learning", "spark", "hadoop", 
+    "matlab", "scikit", "python", "wizualizacj","sql","oracle"), 
+    case = c( T, T, F, T, T, T, T, T, T, T, T, T, T, T, T, T, 
+    T, T,T))
+
+dat$tool <- c("Excel", "SAS", "R", "Big Data", "Data Mining",
+              "Tableau","SPSS","Stata","Cognos","Azure","Machine Learning","Spark","Hadoop","Matlab","SciKit","Python","Wizualizacja danych","SQL","Oracle")
+rownames(dat) <- dat$tool_no <- paste(dat$tool, dat$no)
+dat$tool_no <- reorder(dat$tool_no, dat$freq, median)
+
+ggplot(dat, aes(tool_no,no, fill=tool)) +
+  geom_bar(stat="identity") +
+  coord_flip() + theme_bw() + theme(legend.position="none") +
+  ylab("Liczba ofert") + xlab("")
+
+ggplot(dat[c(2:17,19),], aes(tool_no, no)) +
+  geom_bar(stat="identity") +
+  coord_flip() + theme_bw() + theme(legend.position="none") +
+  ylab("Liczba ofert") + xlab("")
+
+```
+
+## GitHub
+
+Dane pobrane z pakietem GitHubEr. Dotyczą tylko repozytoriów R użytkowników z lokalizacją określoną na Polskę lub któreś z dużych polskich miast.
+
+Przedstawiamy jaka frakcja użytkowników używa określonych pakietów/funkcji. A następnie pokazujemy jak często dana funkcja/pakiet jest używana.
+
+```{r, warning=FALSE, message=FALSE}
+load("../pracuj/mat.rda")
+
+vv <- colMeans(mat>0)
+df <- data.frame(freq=vv, pakiet=names(vv))
+df$pakiet <- reorder(df$pakiet, df$freq, mean)
+
+ggplot(df, aes(pakiet, fill=pakiet, y=freq)) +
+  geom_bar(stat="identity") + theme_bw() +
+  coord_flip() + theme(legend.position="none") +
+  scale_y_continuous(labels = scales::percent)+
+  xlab("")+ylab("Procent repozytoriów używających pakietu/funkcji [polski github]")
+
+
+df <- as.data.frame(as.table(mat))
+df$Var2 <- reorder(df$Var2, df$Freq, median)
+ggplot(df, aes(Var2, fill=Var2, y=Freq)) +
+  geom_violin() + theme_bw() +
+  coord_flip() + theme(legend.position="none") +
+  scale_y_log10(breaks=c(1,2,5,10,20,50,100,200,500,1000,200))+
+  xlab("")+ylab("Liczba wywołań określonego pakietu/funkcji [polski github]")
+```
+
+## GitHub - PCA
+
+Analiza składowych głównych.
+
+Nie bierzemy pod uwagę liczby użyć danego pakietu/funkcji a jedynie fakty użycia/nie używania okreslonego narzędzia.
+
+```{r, warning=FALSE, message=FALSE, fig.width=12, fig.height=12}
+library(ggfortify)
+library(ggrepel)
+tmp <- prcomp(mat>0)
+autoplot(tmp, loadings = TRUE,  loadings.colour = 'blue',
+         loadings.label = TRUE, loadings.label.size = 5, label=F,
+				 shape=FALSE) + theme_bw() + 
+	geom_text_repel(data=tmp$x, aes(PC1, PC2, label=rownames(tmp$x)), size=3, alpha=0.8)
+
+```

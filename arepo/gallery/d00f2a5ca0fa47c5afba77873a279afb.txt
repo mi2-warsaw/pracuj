@@ -1,0 +1,7 @@
+            Var1  Var2 Freq
+1        pbiecek anova  103
+2         argian anova    0
+3 MarcinKosinski anova   20
+4        kolinko anova    0
+5          cenka anova    1
+6         BERENZ anova    2

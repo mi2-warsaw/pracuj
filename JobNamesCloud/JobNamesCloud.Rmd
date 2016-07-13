@@ -21,6 +21,7 @@ library("utils")
 library("ggplot2")
 library("knitr")
 library("rCharts")
+#
 ```
 
 
@@ -122,7 +123,7 @@ plot1$xAxis(axisLabel = 'Month')
 plot1$yAxis(axisLabel = 'Frequency of appereance')
 
 plot1$set(width = 750, height = 590)
-plot1$save("rCharts1.html", standalone=TRUE)
+plot1$save("jobNamesChart.html", standalone=TRUE)
 
 
 ```
