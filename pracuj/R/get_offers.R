@@ -38,11 +38,14 @@ get_offers <- function(dbname = "pracuj", user = "reader", password = "qux94874"
 
     if (description) {
       offers <- dbGetQuery(database, "SELECT * FROM offers")
-      if (windows) {
-        offers[, 8] <- iconv(offers[, 8], from = "UTF-8", to = "Windows-1250")
-      }
     } else {
       offers <- dbGetQuery(database, "SELECT id, href, position, date, location, grade, employer FROM offers")
+    }
+    
+    if (windows) {
+      offers <- sapply(offers, function(column) {
+        iconv(column, from = "UTF-8", to = "Windows-1250")
+      }) %>% as_data_frame()
     }
 
     suppressWarnings(dbDisconnect(database))

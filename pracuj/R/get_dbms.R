@@ -21,7 +21,7 @@
 #'
 #' @export
 
-get_dbms <- function(type = 'all') {
+get_dbms <- function(type = "all") {
   stopifnot(is.character(type))
   
   # scrape data
@@ -31,10 +31,9 @@ get_dbms <- function(type = 'all') {
   scoreNodes <- html_nodes(page, css="th+ .pad-l")
   
   # create data frame
-  dbms <- data.frame(name = html_text(nameNodes),
+  dbms <- data_frame(name = html_text(nameNodes),
                      model = html_text(modelNodes),
-                     score = as.numeric(html_text(scoreNodes)),
-                     stringsAsFactors=F)
+                     score = html_text(scoreNodes) %>% as.numeric)
   
   # clear data
   dbms <- dbms %>%
@@ -48,8 +47,8 @@ get_dbms <- function(type = 'all') {
     mutate(model = gsub("Multi-model ", "", model))
   
   # create list of models from multi-models positions
-  modelList <- strsplit(multiModel$model, ",")
-  modelList <- setNames(modelList, multiModel$name)
+  modelList <- strsplit(multiModel$model, ",") %>%
+    setNames(multiModel$name)
   
   # delete multi-models positions from data frame
   dbms <- dbms[-grep(",", dbms$model), ]
