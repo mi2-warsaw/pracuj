@@ -63,6 +63,30 @@ getSplitList<- function(localList){
 
 ###################################################################
 
+# Function for pasting collected IDs
+pasteIDs <- function(jfType) {
+  paste0(jfType, offersIDs, ",")
+}
+
+###################################################################
+
+# Function for checking which contract type does fit the id
+checkContract <- function(id) {
+  if (grepl(id, jfList$full)) {
+    "Pełny etat"
+  } else if (grepl(id, jfList$part)) {
+    "Część etatu"
+  } else if (grepl(id, jfList$temporary)) {
+    "Praca czasowa"
+  } else if (grepl(id, jfList$contract)) {
+    "Kontrakt"
+  } else {
+    ""
+  }
+}
+
+###################################################################
+
 # define amount of pages to scrap
 nOfPages <- 100
 mainPercentage <- c()
@@ -89,6 +113,39 @@ jobs_names <- c("id", "employer", "position", "grade", "location", "date", "desc
 
 jobs <-data.frame()
 jobs_1 <- data.frame()
+
+# There are four different types of contracts
+jf <- c(1:4)
+jfList <- list(c(), c(), c(), c()) %>%
+  setNames(c("full", "part", "temporary", "contract"))
+
+# Filter offers by type of contract
+for (i in jf) {
+  jfLink <- paste0("http://www.pracuj.pl/praca?jf=", i)
+  
+  # Collect IDs for given type
+  for (j in 1:nOfPages) {
+    pnPage <- read_html(paste0(jfLink, "&pn=", j))
+    pnNode <- html_nodes(pnPage, css = "script")
+    nodeID <- grep("offersOnListForApplied", pnNode)
+    offersIDs <- pnNode[nodeID] %>%
+      html_text() %>%
+      gsub("^[^']*'", "", .) %>%
+      gsub("'.*", "", .)
+    
+    if (offersIDs == "") {
+      break
+    }
+    
+    switch(
+      i,
+      "1" = jfList$full <- pasteIDs(jfList$full),
+      "2" = jfList$part <- pasteIDs(jfList$part),
+      "3" = jfList$temporary <- pasteIDs(jfList$temporary),
+      "4" = jfList$contract <- pasteIDs(jfList$contract)
+    )
+  }
+}
 
 for (i in 1:nOfPages){
 
@@ -201,8 +258,9 @@ links <- na.omit(links)
           salary <- gsub(pattern = "[[:space:]]{0,}\n", replacement = "", salary)
           
         }
-                  
         
+        # Checking contract
+        contract <- checkContract(id)
         
     
         zeroLengthKiller <- list(id, employer, position, grade, location, date, description)
@@ -226,7 +284,7 @@ links <- na.omit(links)
     
     
         dbGetQuery(polaczenie, 
-               paste0("INSERT INTO offers (id, href, position, date, location, grade, employer, description, main_category, sub_category, salary) VALUES ('",
+               paste0("INSERT INTO offers (id, href, position, date, location, grade, employer, description, main_category, sub_category, salary, contract) VALUES ('",
                       id,"','",
                       href,"','",
                       position,"','",
@@ -237,7 +295,8 @@ links <- na.omit(links)
                       description,"','",
                       categoryNames,"','",
                       category,"','",
-                      salary,
+                      salary,"','",
+                      contract,
                       "')"))
         
     }    

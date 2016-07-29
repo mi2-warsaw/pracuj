@@ -39,7 +39,7 @@ get_offers <- function(dbname = "pracuj", user = "reader", password = "qux94874"
     if (description) {
       offers <- dbGetQuery(database, "SELECT * FROM offers")
     } else {
-      offers <- dbGetQuery(database, "SELECT id, href, position, date, location, grade, employer FROM offers")
+      offers <- dbGetQuery(database, "SELECT id, href, position, date, location, grade, employer, main_category, sub_category, salary, contract FROM offers")
     }
     
     if (windows) {
