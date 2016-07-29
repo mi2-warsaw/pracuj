@@ -5,6 +5,63 @@ library(readr)
 library(RPostgreSQL)
 
 
+###################################################################
+
+getDesiredScripts <- function(localList, patternToMatch){
+  offerDataIdx <-c()
+  for (searchIdx in 1:length(patternToMatch)){
+ 
+  offerDataIdxWork <- unlist(lapply(localList, grepl, pattern = paste0(patternToMatch[searchIdx]))) * c(1:length(localList))
+  offerDataIdx <- c(offerDataIdx, offerDataIdxWork[offerDataIdxWork!=0] )
+
+ }
+  
+  return(localList[offerDataIdx])
+  
+}
+
+###################################################################
+
+getValuablesFromList <- function(splitScripts, phraseToFind){
+  
+ 
+for (listIdx in 1: length(splitScripts)){
+
+  foundPhraseIdx <- grep(pattern = paste0(phraseToFind), splitScripts[[listIdx]])
+  
+
+  for (vectIdx in foundPhraseIdx) {
+    
+    foundPhrase <- strsplit(splitScripts[[listIdx]][[vectIdx]], "[[:punct:]]")
+    phraseToFind <- gsub(pattern = "[[:punct:]]", replacement = "", phraseToFind)
+    foundPhrase <- gsub(pattern = paste0(phraseToFind, "|^[[:space:]]{1,}|[[:space:]]{1,}$|^[[:alpha:]][[:digit:]][[:alpha:]][[:space:]]"), replacement = "", unlist(foundPhrase))
+    foundPhrase <- foundPhrase[foundPhrase != ""]
+   
+  }
+
+}
+return(foundPhrase)
+}
+
+
+###################################################################
+
+getSplitList<- function(localList){
+  
+  fullString <- c()
+  
+  for(list in 1:length(localList)){
+    
+    fullString <- paste0(fullString, localList[list])
+  }
+  
+  splitScripts <- strsplit(fullString, "\\\n")
+  
+  return(splitScripts)
+  
+}
+
+###################################################################
 
 # define amount of pages to scrap
 nOfPages <- 100
@@ -21,13 +78,14 @@ host = "services.mini.pw.edu.pl"
 sterownik <- dbDriver("PostgreSQL")
 polaczenie <- dbConnect(sterownik, dbname = dbname, user = user, password = password, host = host)
 
-maxid <- dbGetQuery(polaczenie, "SELECT max(data) FROM offers")[1,1]
+#maxid <- dbGetQuery(polaczenie, "SELECT max(data) FROM offers")[1,1]
 total <- 0
 indiv_ID <- c(0,0,0)
 indiv_ID_TF <- c(FALSE, FALSE, FALSE)
 indiv_ID_df <- data.frame(indiv_ID, indiv_ID_TF)
 
 jobs_names <- c("id", "employer", "position", "grade", "location", "date", "description")
+
 
 jobs <-data.frame()
 jobs_1 <- data.frame()
@@ -38,7 +96,13 @@ mainPercentage <- i/nOfPages*100
 
 
 scrappedPage <- read_html(paste0("http://www.pracuj.pl/praca?pn=",i))
-scrappedNodes <- html_nodes(scrappedPage, css = "#mainOfferList .offer__list_item_link_name")
+scrappedNodes <- html_nodes(scrappedPage, css = "#mainOfferList .o-list_item_link_name")
+
+#quit parsing
+
+if(length(scrappedNodes) == 0)
+{break}
+
 links <- html_attr(scrappedNodes, "href")
 links <- na.omit(links)
 
@@ -84,22 +148,22 @@ links <- na.omit(links)
         currentLinkSource <- read_html(currentLink)
     
         # reading employer name
-        employer <- html_nodes(currentLinkSource, css = ".offerTop__cnt_main_emplo-inline") %>% html_text()
+        employer <- html_nodes(currentLinkSource, css = ".o-top__cnt_main_emplo-inline span") %>% html_text()
         employer <- gsub(pattern = "'", replacement =  " ", employer)
     
         # reading job name
-        position <- html_nodes(currentLinkSource, css = ".offerTop__cnt_main_job") %>% html_text()
+        position <- html_nodes(currentLinkSource, css = ".o-top__cnt_main_job") %>% html_text()
         position <- gsub(pattern = "'", replacement =  " ", position)
 
     
         # reading job grade
-        grade <- html_nodes(currentLinkSource, css = ".offerTop__cnt_main_details_item--second") %>% html_text()
+        grade <- html_nodes(currentLinkSource, css = ".ico-briefcase") %>% html_text()
         # removing "\n" markers from char
         grade <- gsub(pattern = "\n", replacement = " ", grade )
         grade <- gsub(pattern = "'", replacement =  " ", grade)
     
         # reading locations
-        location <- html_nodes(currentLinkSource, css = ".offerTop__cnt_main_details_item:nth-child(1)") %>% html_text()
+        location <- html_nodes(currentLinkSource, css = ".latlng span") %>% html_text()
         location <- gsub(pattern = "'", replacement =  " ", location)
     
         # reading offer details
@@ -108,10 +172,38 @@ links <- na.omit(links)
         description <- gsub(pattern = "\r", replacement = " ", description)
         description <- gsub(pattern = "\t", replacement = " ", description)
         description <- gsub(pattern = "'", replacement =  " ", description)
+        description <- gsub(pattern = "([[:alpha:]])([[:lower:]])([[:blank:]])?([[:punct:]]?)([[:blank:]])?([[:upper:]])", replacement = "\\1\\2 \\6", description)
     
         # reading date of the offer announcment
-        date <- html_nodes(currentLinkSource, css = ".ico-time .offerTop__cnt_main_details_item_text_ico+ span") %>% html_text()
+        date <- html_nodes(currentLinkSource, css = ".ico-time .o-top__cnt_main_details_item_text_ico+ span") %>% html_text()
     
+        
+        #reading scripts from pracuj.pl
+        
+        scriptsWithData <- getDesiredScripts(scripts <- html_nodes(currentLinkSource, css = "script"), c("offerData", "soc_product"))
+        splitScriptsWithData <- getSplitList(scriptsWithData)
+        categoryNames <- getValuablesFromList(splitScriptsWithData, "categoryNames")
+        regionName <- getValuablesFromList(splitScriptsWithData, "regionName")
+        category <- getValuablesFromList(splitScriptsWithData, "category:")
+        
+        
+        #reading salary
+        
+        salary <- html_nodes(currentLinkSource, css = ".o-top__cnt_main_details_item_text.ico-money") %>%
+                  html_text()
+        
+        if(length(salary) == 0){
+          
+         salary <- ""
+          
+        } else {
+          
+          salary <- gsub(pattern = "[[:space:]]{0,}\n", replacement = "", salary)
+          
+        }
+                  
+        
+        
     
         zeroLengthKiller <- list(id, employer, position, grade, location, date, description)
         changeIndicator <- c()
@@ -134,7 +226,7 @@ links <- na.omit(links)
     
     
         dbGetQuery(polaczenie, 
-               paste0("INSERT INTO offers (id, href, position, date, location, grade, employer, description) VALUES ('",
+               paste0("INSERT INTO offers (id, href, position, date, location, grade, employer, description, main_category, sub_category, salary) VALUES ('",
                       id,"','",
                       href,"','",
                       position,"','",
@@ -142,7 +234,10 @@ links <- na.omit(links)
                       location,"','",
                       grade,"','",
                       employer,"','",
-                      description,
+                      description,"','",
+                      categoryNames,"','",
+                      category,"','",
+                      salary,
                       "')"))
         
     }    
