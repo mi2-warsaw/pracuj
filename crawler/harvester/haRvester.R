@@ -243,6 +243,8 @@ links <- na.omit(links)
         regionName <- getValuablesFromList(splitScriptsWithData, "regionName")
         category <- getValuablesFromList(splitScriptsWithData, "category:")
         
+        categoryNames <- categoryNames %>% unique() %>% paste0(collapse = ", ")
+        category <- category[3]
         
         #reading salary
         
