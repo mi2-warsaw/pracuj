@@ -221,7 +221,9 @@ links <- na.omit(links)
     
         # reading locations
         location <- html_nodes(currentLinkSource, css = ".latlng span") %>% html_text()
-        location <- gsub(pattern = "'", replacement =  " ", location)
+        # obsolete
+        # location <- gsub(pattern = "'", replacement =  " ", location)
+        location <- paste0(location, collapse = "")
     
         # reading offer details
         description <- html_nodes(currentLinkSource, css = "#offCont") %>% html_text()
@@ -234,20 +236,24 @@ links <- na.omit(links)
         # reading date of the offer announcment
         date <- html_nodes(currentLinkSource, css = ".ico-time .o-top__cnt_main_details_item_text_ico+ span") %>% html_text()
     
-        
         #reading scripts from pracuj.pl
+        scripts <- html_nodes(currentLinkSource, css = "script")
         
-        scriptsWithData <- getDesiredScripts(scripts <- html_nodes(currentLinkSource, css = "script"), c("offerData", "soc_product"))
-        splitScriptsWithData <- getSplitList(scriptsWithData)
-        categoryNames <- getValuablesFromList(splitScriptsWithData, "categoryNames")
-        regionName <- getValuablesFromList(splitScriptsWithData, "regionName")
-        category <- getValuablesFromList(splitScriptsWithData, "category:")
-        
-        categoryNames <- categoryNames %>% unique() %>% paste0(collapse = ", ")
-        category <- category[3]
+        if (length(scripts) == 7) {
+          scriptsWithData <- getDesiredScripts(scripts, c("offerData", "soc_product"))
+          splitScriptsWithData <- getSplitList(scriptsWithData)
+          categoryNames <- getValuablesFromList(splitScriptsWithData, "categoryNames")
+          regionName <- getValuablesFromList(splitScriptsWithData, "regionName")
+          category <- getValuablesFromList(splitScriptsWithData, "category:")
+          
+          categoryNames <- categoryNames %>% unique() %>% paste0(collapse = ", ")
+          category <- category[3]
+        } else {
+          categoryNames <- ""
+          category <- ""
+        }
         
         #reading salary
-        
         salary <- html_nodes(currentLinkSource, css = ".o-top__cnt_main_details_item_text.ico-money") %>%
                   html_text()
         
