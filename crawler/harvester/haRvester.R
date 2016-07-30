@@ -247,7 +247,7 @@ links <- na.omit(links)
           category <- getValuablesFromList(splitScriptsWithData, "category:")
           
           categoryNames <- categoryNames %>% unique() %>% paste0(collapse = ", ")
-          category <- category[3]
+          category <- category %>% tail(1)
         } else {
           categoryNames <- ""
           category <- ""
