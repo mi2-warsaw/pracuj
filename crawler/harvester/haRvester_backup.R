@@ -5,14 +5,72 @@ library(readr)
 library(RPostgreSQL)
 
 
-###### FUNCTIONS ######
+###################################################################
 
-# Paste collected IDs
+getDesiredScripts <- function(localList, patternToMatch){
+  offerDataIdx <-c()
+  for (searchIdx in 1:length(patternToMatch)){
+ 
+  offerDataIdxWork <- unlist(lapply(localList, grepl, pattern = paste0(patternToMatch[searchIdx]))) * c(1:length(localList))
+  offerDataIdx <- c(offerDataIdx, offerDataIdxWork[offerDataIdxWork!=0] )
+
+ }
+  
+  return(localList[offerDataIdx])
+  
+}
+
+###################################################################
+
+getValuablesFromList <- function(splitScripts, phraseToFind){
+  
+ 
+for (listIdx in 1: length(splitScripts)){
+
+  foundPhraseIdx <- grep(pattern = paste0(phraseToFind), splitScripts[[listIdx]])
+  
+
+  for (vectIdx in foundPhraseIdx) {
+    
+    foundPhrase <- strsplit(splitScripts[[listIdx]][[vectIdx]], "[[:punct:]]")
+    phraseToFind <- gsub(pattern = "[[:punct:]]", replacement = "", phraseToFind)
+    foundPhrase <- gsub(pattern = paste0(phraseToFind, "|^[[:space:]]{1,}|[[:space:]]{1,}$|^[[:alpha:]][[:digit:]][[:alpha:]][[:space:]]"), replacement = "", unlist(foundPhrase))
+    foundPhrase <- foundPhrase[foundPhrase != ""]
+   
+  }
+
+}
+return(foundPhrase)
+}
+
+
+###################################################################
+
+getSplitList<- function(localList){
+  
+  fullString <- c()
+  
+  for(list in 1:length(localList)){
+    
+    fullString <- paste0(fullString, localList[list])
+  }
+  
+  splitScripts <- strsplit(fullString, "\\\n")
+  
+  return(splitScripts)
+  
+}
+
+###################################################################
+
+# Function for pasting collected IDs
 pasteIDs <- function(jfType) {
   paste0(jfType, offersIDs, ",")
 }
 
-# Check which contract type does fit the id
+###################################################################
+
+# Function for checking which contract type does fit the id
 checkContract <- function(id) {
   if (grepl(id, jfList$full)) {
     "Pełny etat"
@@ -27,50 +85,7 @@ checkContract <- function(id) {
   }
 }
 
-# Convert signs
-signsConverter <- function(string, signsList) {
-  mapply(
-    function(from, to) {
-      gsub(from, to, string)
-    }, names(signsList), signsList
-  )
-}
-
-# Strip single quotation marks
-sqmSub <- function(string) {
-  string %>%
-    gsub("^[^']*'", "", .) %>%
-    gsub("'.*", "", .)
-}
-
-# Collect main and sub categories
-getCategories <- function(scriptNodes, funPhrase) {
-  valPhrase <- switch(
-    funPhrase,
-    offerData = "categoryNames:",
-    soc_product = "category:"
-  )
-  script <- scriptNodes %>%
-    grep(funPhrase, .) %>%
-    scriptNodes[.] %>%
-    html_text() %>%
-    signsConverter(polishSigns) %>%
-    strsplit("\n") %>%
-    unlist()
-  phrase <- script %>%
-    grep(valPhrase, .) %>%
-    script[.]
-  if (funPhrase == "soc_product") {
-    phrase <- phrase %>%
-      strsplit(",") %>%
-      unlist() %>%
-      tail(1)
-  }
-  phrase %>%
-    sqmSub()
-}
-
-##### SCRIPT #####
+###################################################################
 
 # define amount of pages to scrap
 nOfPages <- 100
@@ -98,10 +113,6 @@ jobs_names <- c("id", "employer", "position", "grade", "location", "date", "desc
 
 jobs <-data.frame()
 jobs_1 <- data.frame()
-
-# Matched polish signs
-polishSigns <- list("ó") %>%
-  setNames(c("&#243;"))
 
 # There are four different types of contracts
 jf <- c(1:4)
@@ -228,12 +239,18 @@ links <- na.omit(links)
         #reading scripts from pracuj.pl
         scripts <- html_nodes(currentLinkSource, css = "script")
         
-        if (length(scripts) >= 7) {
-          main_category <- getCategories(scripts, "offerData")
-          sub_category <- getCategories(scripts, "soc_product")
+        if (length(scripts) == 7) {
+          scriptsWithData <- getDesiredScripts(scripts, c("offerData", "soc_product"))
+          splitScriptsWithData <- getSplitList(scriptsWithData)
+          categoryNames <- getValuablesFromList(splitScriptsWithData, "categoryNames")
+          regionName <- getValuablesFromList(splitScriptsWithData, "regionName")
+          category <- getValuablesFromList(splitScriptsWithData, "category:")
+          
+          categoryNames <- categoryNames %>% unique() %>% paste0(collapse = ", ")
+          category <- category %>% tail(1)
         } else {
-          main_category <- ""
-          sub_category <- ""
+          categoryNames <- ""
+          category <- ""
         }
         
         #reading salary
@@ -284,8 +301,8 @@ links <- na.omit(links)
                       grade,"','",
                       employer,"','",
                       description,"','",
-                      main_category,"','",
-                      sub_category,"','",
+                      categoryNames,"','",
+                      category,"','",
                       salary,"','",
                       contract,
                       "')"))
