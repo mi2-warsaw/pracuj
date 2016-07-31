@@ -172,6 +172,9 @@ links <- na.omit(links)
     
     
     # reading offer ID
+    if (grepl(pattern = "\\+", currentLink)){
+      currentLink <- gsub(pattern = "\\+", replacement = "", currentLink)
+    }
     id <- gsub(pattern = gsub(pattern = "([[:digit:]]*)$", replacement = "", currentLink), replacement = "", currentLink)
     
     czyjest <- as.numeric( dbGetQuery(polaczenie, paste0("SELECT count(*) FROM offers where id = '",id,"'")))
