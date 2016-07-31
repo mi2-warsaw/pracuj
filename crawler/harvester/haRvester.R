@@ -29,11 +29,11 @@ checkContract <- function(id) {
 
 # Convert signs
 signsConverter <- function(string, signsList) {
-  mapply(
-    function(from, to) {
-      gsub(from, to, string)
-    }, names(signsList), signsList
-  )
+  for (i in 1:length(signsList)) {
+    string <- string %>%
+      gsub(names(signsList)[[i]], signsList[[i]], ., fixed = TRUE)
+  }
+  string
 }
 
 # Strip single quotation marks
@@ -54,20 +54,26 @@ getCategories <- function(scriptNodes, funPhrase) {
     grep(funPhrase, .) %>%
     scriptNodes[.] %>%
     html_text() %>%
-    signsConverter(polishSigns) %>%
+    signsConverter(signs2Convert) %>%
     strsplit("\n") %>%
     unlist()
   phrase <- script %>%
     grep(valPhrase, .) %>%
     script[.]
-  if (funPhrase == "soc_product") {
-    phrase <- phrase %>%
+  switch(
+    funPhrase,
+    offerData = phrase %>%
+      sqmSub() %>%
+      strsplit(", ") %>%
+      unlist() %>%
+      unique() %>%
+      paste0(collapse = ", "),
+    soc_product = phrase %>%
       strsplit(",") %>%
       unlist() %>%
-      tail(1)
-  }
-  phrase %>%
-    sqmSub()
+      tail(1) %>%
+      sqmSub()
+  )
 }
 
 ##### SCRIPT #####
@@ -99,9 +105,9 @@ jobs_names <- c("id", "employer", "position", "grade", "location", "date", "desc
 jobs <-data.frame()
 jobs_1 <- data.frame()
 
-# Matched polish signs
-polishSigns <- list("ó") %>%
-  setNames(c("&#243;"))
+# Matched signs
+signs2Convert <- list("ó", "ó", "/") %>%
+  setNames(c("&#243;", "\\u00f3", "\\x2f"))
 
 # There are four different types of contracts
 jf <- c(1:4)
