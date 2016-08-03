@@ -119,8 +119,8 @@ indiv_ID_df <- data.frame(indiv_ID, indiv_ID_TF)
 
 jobs_names <- c("id", "employer", "position", "grade", "location", "date", "description")
 
-jobs <-data.frame()
-jobs_1 <- data.frame()
+jobs <- data_frame()
+jobs_1 <- data_frame()
 
 # Matched signs
 signs2Convert <- list("ó", "ó", "/") %>%
@@ -304,7 +304,7 @@ for (i in 1:nrow(idLinks)) {
     assign(paste0(jobs_names[varName]), zeroLengthKiller[[varName]])
   }
   
-  jobs_1 <- data.frame(
+  jobs_1 <- data_frame(
     id, employer, position, grade, location, date, description, href,
     main_category, sub_category, salary, contract
   )
@@ -341,5 +341,3 @@ for (i in 1:nrow(idLinks)) {
   # Confirm load
   print(paste0("offer of id:   ", id, "   loaded into DB"))
 }
-
-# write_csv(jobs, "jobs.csv")
