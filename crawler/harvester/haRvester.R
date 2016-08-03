@@ -97,7 +97,7 @@ isIDinDB <- function(hrefVect) {
 ##### SCRIPT #####
 
 # define amount of pages to scrap
-nOfPages <- 3
+nOfPages <- 100
 mainPercentage <- c()
 subPercentage <- c()
 
