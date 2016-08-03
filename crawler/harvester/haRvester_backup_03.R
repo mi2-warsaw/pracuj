@@ -23,7 +23,7 @@ checkContract <- function(id) {
   } else if (grepl(id, jfList$contract)) {
     "Kontrakt"
   } else {
-    NA
+    ""
   }
 }
 
@@ -82,8 +82,7 @@ isIDinDB <- function(hrefVect) {
     data_frame() %>%
     setNames("href") %>%
     mutate(
-      href = gsub("\\+", "", href),
-      id = href %>%
+      id = gsub("\\+", "", href) %>%
         gsub("[[:digit:]]*$", "", .) %>%
         mapply(
           function(x, y) {
@@ -97,17 +96,12 @@ isIDinDB <- function(hrefVect) {
 ##### SCRIPT #####
 
 # define amount of pages to scrap
-nOfPages <- 3
+nOfPages <- 10
 mainPercentage <- c()
 subPercentage <- c()
 
-polaczenie <- dbConnect(
-  PostgreSQL(),
-  dbname = "pracuj",
-  user = "pracuj",
-  password = "haslopracownikapracuj",
-  host = "services.mini.pw.edu.pl"
-)
+sterownik <- dbDriver("PostgreSQL")
+polaczenie <- dbConnect(sterownik, dbname = dbname, user = user, password = password, host = host)
 
 #maxid <- dbGetQuery(polaczenie, "SELECT max(data) FROM offers")[1,1]
 total <- 0
@@ -162,8 +156,7 @@ dbIDs <- dbGetQuery(polaczenie, "SELECT id FROM offers")
 links <- c()
 
 for (i in 1:nOfPages) {
-  mainPercentage <- i/nOfPages*100
-
+  # mainPercentage <- i/nOfPages*100}
   scrappedPage <- read_html(paste0("http://www.pracuj.pl/praca?pn=", i))
   scrappedNodes <- html_nodes(scrappedPage, css = "#mainOfferList .o-list_item_link_name")
   
@@ -174,19 +167,17 @@ for (i in 1:nOfPages) {
     html_attr(scrappedNodes, "href") %>%
       na.omit(links)
   )
-  
-  print(
-    paste0(
-      "scrapped pages: ", format(round(mainPercentage, 2), nsmall = 2), "%"
-    )
-  )
 }
 
 idLinks <- isIDinDB(links)
 
 for (i in 1:nrow(idLinks)) {
   # current progress
-  subPercentage <- i/nrow(idLinks)*100
+  subPercentage <- (i/length(links) *100/nOfPages)
+  + mainPercentage
+  - 100/nOfPages
+  
+  print(paste0("scrapped: ", format(round(subPercentage, 2), nsmall = 2), "%"))
   
   # Getting link ready
   href <- paste0("http://www.pracuj.pl", idLinks$href[i])
@@ -264,8 +255,8 @@ for (i in 1:nrow(idLinks)) {
     main_category <- getCategories(scripts, "offerData")
     sub_category <- getCategories(scripts, "soc_product")
   } else {
-    main_category <- NA
-    sub_category <- NA
+    main_category <- ""
+    sub_category <- ""
   }
   
   # Reading salary
@@ -276,7 +267,7 @@ for (i in 1:nrow(idLinks)) {
     html_text()
   
   if (length(salary) == 0) {
-    salary <- NA
+    salary <- ""
   } else {
     salary <- salary %>%
       gsub("[[:space:]]{0,}\n", "", .)
@@ -303,40 +294,31 @@ for (i in 1:nrow(idLinks)) {
   }
   
   jobs_1 <- data.frame(
-    id, employer, position, grade, location, date, description, href,
-    main_category, sub_category, salary, contract
+    id, employer, position, grade, location, date, description, href
   )
   jobs <- rbind(jobs, jobs_1)
   
-  # Current progress
-  print(
-    paste0(
-      "scrapped offers: ", format(round(subPercentage, 2), nsmall = 2), "%"
-    )
-  )
+  # # Insert into DB
+  # dbGetQuery(
+  #   polaczenie,
+  #   paste0(
+  #     "INSERT INTO offers (id, href, position, date, location, grade, employer, description, main_category, sub_category, salary, contract) VALUES ('",
+  #     id,"','",
+  #     href,"','",
+  #     position,"','",
+  #     date,"','",
+  #     location,"','",
+  #     grade,"','",
+  #     employer,"','",
+  #     description,"','",
+  #     main_category,"','",
+  #     sub_category,"','",
+  #     salary,"','",
+  #     contract,
+  #     "')"
+  #   )
+  # )
   
-  # Insert into DB
-  dbGetQuery(
-    polaczenie,
-    paste0(
-      "INSERT INTO offers (id, href, position, date, location, grade, employer, description, main_category, sub_category, salary, contract) VALUES ('",
-      id,"','",
-      href,"','",
-      position,"','",
-      date,"','",
-      location,"','",
-      grade,"','",
-      employer,"','",
-      description,"','",
-      main_category,"','",
-      sub_category,"','",
-      salary,"','",
-      contract,
-      "')"
-    )
-  )
-  
-  # Confirm load
   print(paste0("offer of id:   ", id, "   loaded into DB"))
 }
 
