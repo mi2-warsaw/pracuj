@@ -101,11 +101,13 @@ nOfPages <- 100
 mainPercentage <- c()
 subPercentage <- c()
 
+password <- ""
+
 polaczenie <- dbConnect(
   PostgreSQL(),
   dbname = "pracuj",
   user = "pracuj",
-  password = "haslopracownikapracuj",
+  password = password,
   host = "services.mini.pw.edu.pl"
 )
 
