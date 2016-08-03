@@ -221,9 +221,9 @@ for (i in 1:nrow(idLinks)) {
     css = ".ico-briefcase"
   ) %>%
     html_text() %>%
-    # removing "\n" markers from char
     gsub("\n", " ", .) %>%
-    gsub("'", " ", .)
+    gsub("'", " ", .) %>%
+    trimws()
   
   # Reading locations
   location <- html_nodes(
