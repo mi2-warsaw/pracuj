@@ -108,7 +108,7 @@ nOfPages <- 100
 mainPercentage <- c()
 subPercentage <- c()
 
-password <- "haslopracownikapracuj"
+# password <- ""
 
 polaczenie <- dbConnect(
   PostgreSQL(),
