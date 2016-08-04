@@ -43,6 +43,13 @@ sqmSub <- function(string) {
     gsub("'.*", "", .)
 }
 
+# Trim whitespaces and remove single quotation marks
+adjustString <- function(string) {
+  string %>%
+    gsub("'", " ", .) %>%
+    trimws()
+}
+
 # Collect main and sub categories
 getCategories <- function(scriptNodes, funPhrase) {
   valPhrase <- switch(
@@ -101,7 +108,7 @@ nOfPages <- 100
 mainPercentage <- c()
 subPercentage <- c()
 
-password <- ""
+password <- "haslopracownikapracuj"
 
 polaczenie <- dbConnect(
   PostgreSQL(),
@@ -205,7 +212,7 @@ for (i in 1:nrow(idLinks)) {
     css = ".o-top__cnt_main_emplo-inline span"
   ) %>%
     html_text() %>%
-    gsub("'", " ", .)
+    adjustString()
   
   # Reading job name
   position <- html_nodes(
@@ -213,7 +220,7 @@ for (i in 1:nrow(idLinks)) {
     css = ".o-top__cnt_main_job"
   ) %>%
     html_text() %>%
-    gsub("'", " ", .)
+    adjustString()
   
   # Reading job grade
   grade <- html_nodes(
@@ -221,9 +228,7 @@ for (i in 1:nrow(idLinks)) {
     css = ".ico-briefcase"
   ) %>%
     html_text() %>%
-    gsub("\n", " ", .) %>%
-    gsub("'", " ", .) %>%
-    trimws()
+    adjustString()
   
   # Reading locations
   location <- html_nodes(
@@ -231,7 +236,8 @@ for (i in 1:nrow(idLinks)) {
     css = ".latlng span"
   ) %>%
     html_text() %>%
-    paste0(collapse = "")
+    paste0(collapse = "") %>%
+    adjustString()
   
   # Reading offer details
   description <- html_nodes(
@@ -294,13 +300,13 @@ for (i in 1:nrow(idLinks)) {
   changeIndicator <- c()
   
   for (index in 1:length(zeroLengthKiller)) {
-    if(length(zeroLengthKiller[[index]])==0){
+    if(length(zeroLengthKiller[[index]]) == 0) {
       zeroLengthKiller[[index]] <- c("Rekrutacja ukryta")
       changeIndicator <- c(changeIndicator, index)
     }
   }
   
-  for (varName in changeIndicator){
+  for (varName in changeIndicator) {
     assign(paste0(jobs_names[varName]), zeroLengthKiller[[varName]])
   }
   
