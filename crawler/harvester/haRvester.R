@@ -4,6 +4,23 @@ library(dplyr)
 library(readr)
 library(RPostgreSQL)
 
+##### SCRIPT #####
+
+# define amount of pages to scrap
+nOfPages <- 100
+mainPercentage <- c()
+subPercentage <- c()
+
+password <- ""
+
+polaczenie <- dbConnect(
+  PostgreSQL(),
+  dbname = "pracuj",
+  user = "pracuj",
+  password = password,
+  host = "services.mini.pw.edu.pl"
+)
+
 
 ###### FUNCTIONS ######
 
@@ -100,23 +117,6 @@ isIDinDB <- function(hrefVect) {
     ) %>%
     filter(!(id %in% dbIDs$id))
 }
-
-##### SCRIPT #####
-
-# define amount of pages to scrap
-nOfPages <- 100
-mainPercentage <- c()
-subPercentage <- c()
-
-password <- ""
-
-polaczenie <- dbConnect(
-  PostgreSQL(),
-  dbname = "pracuj",
-  user = "pracuj",
-  password = password,
-  host = "services.mini.pw.edu.pl"
-)
 
 #maxid <- dbGetQuery(polaczenie, "SELECT max(data) FROM offers")[1,1]
 total <- 0
