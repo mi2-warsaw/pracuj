@@ -1,0 +1,1 @@
+{"GLM":{"OC":{"Youden":[0.0362],"SpEqualSe":[0.0209]},"AUC":[0.9635]},"RF":{"OC":{"Youden":[0.074],"SpEqualSe":[0.002]},"AUC":[0.9376]},"XGB":{"OC":{"Youden":[0.0339],"SpEqualSe":[0.0174]},"AUC":[0.9742]}}
