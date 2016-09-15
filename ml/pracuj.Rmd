@@ -13,7 +13,7 @@ output:
     number_sections: true
 ---
 
-```{r echo = FALSE}
+```{r echo = FALSE, message = FALSE}
 library(dplyr)
 library(ggplot2)
 library(ggvis)
@@ -326,7 +326,7 @@ One can see that neither any of groups nor one of two columns appeared on VIPs. 
 
 ![](eachTraining/plots/portraitROCXGBzoom.png)
 
-One can observe that performances are almost identical for each database grouping and that always the best option (by a bit) was keeping all databases in their separate columns.
+One can observe that performances are almost identical for each database grouping and that always the best option (by a tiny bit for XGB) was to keep all databases in their separate columns.
 
 #### Repeated cross validation
 
