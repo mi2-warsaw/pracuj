@@ -13,7 +13,11 @@ output:
     number_sections: true
 ---
 
-```{r echo = FALSE, message = FALSE}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+```
+
+```{r}
 library(dplyr)
 library(ggplot2)
 library(ggvis)
@@ -23,7 +27,7 @@ library(pander)
 library(readr)
 ```
 
-```{r echo = FALSE}
+```{r}
 # Functions
 
 conMat <- function(tab) {
@@ -84,28 +88,28 @@ conMat <- function(tab) {
 ```
 
 # Introduction
-Usually academic teaching programme lags behind the real world requirements - we have learned that this time-gap could be as big as two years. In order to remedy this quite excessive time lag [prof. Przemysław Biecek](http://biecek.pl/) from MiNI (faculty for Mathematics and Informational Studies) at Warsaw University of Technology decided to assign us (interns at MI2 group) to a task – extract and identify skills needed by data science industry in order to align teaching with current needs.
+Usually academic teaching programme lags behind the real world requirements - we have learned that this time-gap could be as big as two years. In order to remedy this quite excessive time lag [prof. Przemysław Biecek](http://biecek.pl/) from MiNI (faculty of Mathematics and Informational Studies) at Warsaw University of Technology decided to assign us (interns at MI2 group) to a task – extract and identify skills needed by data science industry in order to align teaching with current needs.
 
 # Masterplan
 
-Although the idea may appear as a simple task - it wasn't. We would have never made it if not for the professors general idea about how things should be done. The main idea was to download a lot of job offers, tag offers according to “is/is not data scientist” scheme, train ML model on downloaded data, predict if fresh/“unseen” by the model offer is from the DS industry or not and extract most popular/needed skills from all DS offers. Prof. Biecek developed the following plan:
+Although the idea may appear as a simple task - it wasn't. We would have never made it if not for the professor's general idea about how things should be done. The main idea was to download a lot of job offers, tag offers according to “is/is not data scientist” scheme, train ML model on downloaded data, predict if fresh/“unseen” by the model offer is from the DS industry or not and extract most popular/needed skills from all DS offers. Prof. Biecek developed the following plan:
 
 1. Pick the website with job offers (we chose [pracuj.pl](http://www.pracuj.pl/)) and acquire needed data:
     + either by asking politely website's administration
-    + or by web-scrapping
+    + or by web-scraping
 2. Clean and filter the downloaded data (perform elementary analysis)
 3. Prepare data for machine learning algorithms (proper tagging and data format)
 4. Perform machine learning on previously prepared data
-5. Present and analyze results
+5. Present and analyse results
 
-We had to choose the way of data-scrapping because we had no response for our data requests.
+We had to choose the way of data-scraping because we had no response for our data requests.
 
 # Execution
 
-## Scrapping
+## Scraping
 
-In order to analyze data we had to download it first. Therefore we developed web-scrapping script in R. The script utilized rvest package and css tags were obtained with [SelectorGadget](http://selectorgadget.com/) addon. The content that the script targeted and downloaded was immediately uploaded into PostgreSQL database (or rather one simple table with offer's id, description, employer's name etc...). One can access the gathered data either by a function in our ['pracuj' package](https://github.com/mi2-warsaw/pracuj/tree/master/pracuj) or by connecting via options below:
-```{r echo = FALSE}
+In order to analyse data we had to download it first. Therefore we developed web-scraping script in R. The script utilized rvest package and css tags were obtained with [SelectorGadget](http://selectorgadget.com/) addon. The content that the script targeted and downloaded was immediately uploaded into PostgreSQL database (or rather one simple table with offer's id, description, employer's name etc...). One can access the gathered data either by a function in our ['pracuj' package](https://github.com/mi2-warsaw/pracuj/tree/master/pracuj) or by connecting via options below:
+```{r}
 data_frame(
   dbname = "pracuj",
   user = "reader",
@@ -115,7 +119,7 @@ data_frame(
   kable()
 ```
 
-We scrapped and split into different columns the following properties of each job offer:
+We scraped and split into different columns the following properties of each job offer:
 
 1. offer's id,
 2. offer's link,
@@ -131,7 +135,7 @@ We scrapped and split into different columns the following properties of each jo
 12. contract type (if possible)
 
 Here is a subset of the database structure:
-```{r echo = FALSE}
+```{r}
 example <- read_csv("data/example.csv")
 example$href <- "http://www.pracuj.pl/..."
 example$description <- "Offer's description"
@@ -140,7 +144,7 @@ example$positive_phrase <- NULL
 kable(example)
 ```
 
-Some of the cells may not contain any information – that is because of the scrapper's evolution during project's development. Some functionality was added long after the core of the scrapping algorithm was created.
+Some of the cells may not contain any information – that is because of the scraper's evolution during project's development. Some functionality was added long after the core of the scraping algorithm was created.
 
 After the data was downloaded we could initiate the filtering and data-cleaning procedures. They were the most time consuming operations.
 
@@ -148,7 +152,7 @@ After the data was downloaded we could initiate the filtering and data-cleaning 
 
 ### Rapid problem description
 
-Why did we bother do filter and clean the data? We needed to feed the ML algorithms (GLM, Random Forest or XGB) tagged data to learn on and therefore we wanted to know which downloaded offer is for data scientist and which one is not. This is where we decided we would try to make tagging (determining if offer is for a DS or not) automatic (at that point we had about 40 thousands of job offers downloaded).
+Why did we bother to filter and clean the data? We needed to feed the ML algorithms (GLM, Random Forest or XGBoost) tagged data to learn on and therefore we wanted to know which downloaded offer is for data scientist and which one is not. This is where we decided we would try to make tagging (determining if offer is for a DS or not) automatic (at that point we had about 40 thousands of job offers downloaded).
 
 Initially the downloaded information was messy and unwilling to cooperate. Even the coding was wrong - we had to switch to Linux and it's UTF-8 codepage to be able to read and write polish characters properly.
 
@@ -157,11 +161,11 @@ Initially the downloaded information was messy and unwilling to cooperate. Even 
 The first shot we took at data filtering and cleaning was creating a simple filter that operated only on the job names (job name was incorporated in the downloaded offer's link). The idea behind the filter was quite primitive:
 
 1. Create a dictionary of keywords or phrases (like data-scientist, data-analyst),
-2. Create the dictionary of exceptions (),
+2. Create the dictionary of exceptions (hardware-analyst, LAN-analyst),
 3. Filter data using both lists
 4. Conduct preliminary analysis (like frequency of appearance of a certain skill).
 
-It's fair to state that when this primitive filter was created we weren't able to download the job's description and therefore we had no better way of telling if an offer was for a DS or not. Sometime at this point we figured we will need a lot more keywords and whole descriptions to be able to conduct and sort of machine learning. What we decided to use described algorithm for was “is/is not data scientist” tagging. The output of this script was simple table containing two columns: id and “is/is not DS”. Later on (during the machine learning phase) this tagging concept turned out to be badly flawed however we still used it's output as a starting point for a proper classification. 
+It's fair to state that when this primitive filter was created we weren't able to download the job's description and therefore we had no better way of telling if an offer was for a DS or not. Sometime at this point we figured we will need a lot more keywords and whole descriptions to be able to perform machine learning. What we decided to use described algorithm for was “is/is not data scientist” tagging. The output of this script was simple table containing two columns: id and “is/is not DS”. Later on (during the machine learning phase) this tagging concept turned out to be badly flawed, however we still used its output as a starting point for a proper classification.
 
 ### Second filtering attempt
 
@@ -171,11 +175,11 @@ Few things were clear at the starting point of this chapter:
 
 * filtering would utilize keywords rather than context search (we figured that way would be much easier to do for the beginners like us),
 * we would have to search for specific skills/keywords/phrases - offers with description which did not contain any of specified skills/keywords were discarded (the assumption was that if there are no keywords found, the given offer could not possibly be a DS position),
-* the dictionary would have to cover both hard skills (R, SAS, Java, JavaScript, ...) and (more or less) soft skills (analytical thinking, ad-hoc analysis, ...)
+* the new dictionary would have to cover both hard skills (R, SAS, Java, JavaScript, ...) and (more or less) soft skills (analytical thinking, ad-hoc analysis, ...)
     
-To be specific we needed the data frame with 'ids' as primary keys and skills/keywords as column names. We decided to go for the data frame in which every skill name/keyword had it's column and every offer had it's row. The example of desired data structure is shown below. The “1” is placed in the proper column of a given row if the certain skill/keyword was found in offer's description. If the skill was not found the “0” value appeared in a certain row/column combination.
+To be specific we needed the data frame with 'ids' as primary keys and skills/keywords as column names. We decided to go for the data frame in which every skill name/keyword had it's column and every offer had it's row. The example of desired data structure is shown below. The '1' is placed in the proper column of a given row if the certain skill/keyword was found in offer's description. If the skill was not found the '0' value appeared in a certain row/column combination.
 
-```{r echo = FALSE}
+```{r}
 sample <- read_csv("data/sample.csv")
 kable(sample)
 ```
@@ -186,9 +190,9 @@ We didn't spend as much time on filter as we did on tagging but the algorithm an
 
 First of all – we had to specify the keywords we would use to filter out offers that could be connected with DS industry. In order to do that we read more than a 1100 offers during two phases of keywords selection.
 
-First phase was slightly similar to shooting blind - we visited pracuj.pl and searched for offers with 'data science', 'data engineering', 'big data' in their names. Initially we read only about 100 of them and extracted about 150 keywords/key phrases.
+First phase was slightly similar to shooting blind - we visited pracuj.pl and searched for offers with 'data science', 'data engineering', 'big data' in their names. Initially we read only about 100 of them and extracted about 165 keywords/key phrases.
 
-Second phase of keywords selection was conducted after the first iteration of machine learning didn't bring expected results (~0.5 tpr with ~0.1 fpr) and was much more extensive than the previous keywords search. This time we used primitive filter in order to find offers which might be from DS industry (at that point we already knew the primitive filter was no good). It found about 900 offers which we later read and tagged. During the retagging process we decided to expand dictionary for some offers from DS industry didn't have any matching keywords with our dictionary – this is how the second phase of keywords selection was initiated. New tags and expanded dictionaries increased the efficiency greatly (it will be described later).
+Second phase of keywords selection was conducted after the first iteration of machine learning didn't bring expected results (~0.5 tpr with ~0.1 fpr) and was much more extensive than the previous keywords search. This time we used primitive filter in order to find offers which might be from DS industry (at that point we already knew the primitive filter was no good for automatical tagging). It found about 900 offers which we later read and tagged. During the retagging process we decided to expand dictionary for some offers from DS industry didn't have any matching keywords with our dictionary – this is how the second phase of keywords selection was initiated. New tags and expanded dictionary increased the efficiency greatly (it will be described later).
 
 #### The algorithm
 
@@ -196,7 +200,7 @@ Algorithm in it's current form wasn't probably the most efficient way to deal wi
 
 1. There was \*.csv file created for each keyword. The basic example of structure of the \*.csv file is shown below:
 
-```{r echo = FALSE}
+```{r}
 data_frame(
   `Offer's id` = c(4562153, 4562153, 4532569),
   `Word in preceding the keyword/keyphrase` = c("advanced", "Python", "in"),
@@ -221,7 +225,7 @@ Afterwards we re-filtered entire dataset and created new \*.csv files for every 
 
 When the desired \*.csv files were created there was only one step left to do – create data frame for machine learning. We will only state that there are many ways to create needed data structure and it makes no difference which way you decide to use as long as the output is correct. However keep in mind that for the final ML model (to increase model's accuracy) we slightly modified the data structure – the keyword's appearances were totaled for each offer. The final data structure looked somewhat similar to:
 
-```{r echo = FALSE}
+```{r}
 data_frame(
   id = c(4562153, 4532569),
   `Ms Access` = c(3, 1),
@@ -236,13 +240,34 @@ data_frame(
 
 ### The basic concept
 
-Why use machine learning algorithms for already tagged offers? Let us remember every day the scrapper was downloading new data from pracuj.pl we were archiving more and more offers. Those offers were not tagged anymore (otherwise we would never be able to finish this project) but still needed to be classified as data science/not data science. To achieve this goal we decided to use supervised learning (stats, randomForest and xgboost packages) on relatively small amount of tagged data (around 40000 offers) and later on use the best model acquired from learning phase to categorize 'unseen' offers.
+Why use machine learning algorithms for already tagged offers? Let us remember that every day the scraper was downloading new data from pracuj.pl we were archiving more and more offers. Those offers were not tagged anymore (otherwise we would never be able to finish this project) but still needed to be classified as data science/not data science. To achieve this goal we decided to use supervised learning (stats, randomForest, xgboost and caret packages) on relatively small amount of tagged data (around 40000 offers) and later on use the best model acquired from learning phase to categorize 'unseen' offers.
 
-### Model training and model comparison
 
-In order to choose the best method out of three primarily selected (GLM, RF, XGB) we followed prof. Biecek advice and decided to train 10 models of each type and compare their cumulative scores, i.e. we used caret package (createDataPartition function) to split dataset 10 times with p = .75 and trained one model on each train subset (each subset had the same amount of data as the primary set). When the model was ready we checked it's performance on the test subset and saved the results. When we obtained all models' predictions for certain method we joined all test subsets and scores for those subsets in the following fashion:
+### Quest for ROC upper left corner
 
-```{r echo = FALSE}
+#### General strategy
+
+In order to complete given task we followed a general plan which was devised by prof. Biecek. Our strategy could be summarised in few following points:
+
+  1.  Train 10 models for each method (GLM, RF, XGB),
+  
+  2.  Compare average reuslts between the methods using combined ROC curves,
+  
+  3.  Choose the best method for the given problem,
+  
+  4.  Use repeated crossvalidation to obtain the best possible model of the selected method,
+  
+  5.  Score the entire database and prepare script for scoring the downloaded offers 'on the run'
+  
+#### Explanations and assumptions
+  
+We belive some things (such as average ROCs) may need further explanations and we would like to do it in this paragraph. Let us start with explanations:
+
+  - combined/average ROC is a curve drawn for all 10 testing sets for each method. To be more clear - we got 10 data subsets from caret createDataPartition() method. Each subset consisted of training (75% of all tagged observations) and testing (25% of all tagged observations) set of data. Models were trained on training part of subset and evaluated on testing data frame for each of 10 subset. The idea behind the average/combined ROC was to combine 10 testing datasets row by row and plot one ROC for them. The basic concept is shown below:
+  
+Get 1. subset -> train 1. model on 1. train subset -> test 1. model on 1. test subset -> save the scores (| id | tag | model score |) for 1. test subset -> get 2. subset -> ... -> save the scores (| id | tag | model score |) for 10. test subset
+
+```{r}
 data_frame(
   `Offer's tag` = c(
     "Tags of test subset no. 1",
@@ -260,23 +285,58 @@ data_frame(
   kable()
 ```
 
-to obtain cumulative ROC – True Positive Rate vs False Positive Rate (with package ROCR and functions: prediction(), performance() and plot()).
-
 It is mandatory to mention here, that XGBoost method was designed to train with cross validation so it would not be fair to compare results obtained from XGBoost in its prime to non cross validated GLM and Random Forest. We will do that later but for now XGBoost models will be trained only with one iteration to see how well it performs with minimal effort.
 
-In order to improve models' performance we manipulated data slightly but those tweaks and tinkering with data will be described later. The important thing to state is that the Random Forest models always had the highest ROC AUC (Area Under Curve) and the steepest ascend.
+This way one ROC was drawn for 10 models of a single method (GLM, RF, XGB). We assumed that this was averaged ROC representative for the given method.
 
-### Caret package – training the best of them all
+  - We did not experiment with different train/test ratios too much. The 'p' parameter was fixed at p = .75 for all data splitting attempts but repeated crossvalidation (where automatically p = 1/nfold)
 
-Once we determined which method will suit our purpose best it was time to look for the best possible Random Forest around. We used training with cross-validation available in caret package (trainControl() and train() functions to be specific). We used 3 rounds and 10 folds which explicitly means that main dataset was divided into 10 subsets, on each subset one model was trained in three different ways – with small amount of variables to be considered for each tree split, medium and large. This procedure was repeated 3 times (for each subset) and the model with the lowest average error (uściślić) was chosen as the best one. To sum things up there were 10 subsets, 3 models were trained for each subset (f.e. once with 2 variables to choose from per each tree split, once with 72 variables per split and once with 150) and this 10 * 3 procedure was repeated 3 times.
+During entire machine learning phase following assumptions were made:
 
-### Quest for ROC upper left corner
+  1. The average ROC is sufficient to decide which method is best for our purpose,
+  
+  2. The larger the training set the better model would be trained,
+  
+#### Why would someone assume such a thing?
 
-Here we would like to sum up all the data-manipulation activities we performed in order to get the ROC shown below.
+'Such a thing' reffers to the first assumption made. It was not as obvious as it would seem however we decided to consider it true (after doing some research) because of one simple thing - time. Repeated crossvalidation for a single method (especially Random Forest) was very time consuming. We had plenty of ideas about what could be done with data (adding/removing columns, grouping them, etc.) in order to improve model's efficiency and performing crossvalidation for each and every idea/data modification would infinitely increase the time we would have to spend on this project. Keep in mind that we initiated our data-manipulation activities when the model efficiency was very poor (plot n) and we really wanted to avoid manual data tagging - hence we experimented a lot with data frame. To be fair we performed a short research in order to see if we were not wrong to consider first assumption to be true. We performed crossvalidations for 4 datasets:
+
+1.  entire 0-1 dataset (without counting the keywords) with no extra columns
+2.  entire 0-1 dataset with extra columns
+3.  entire dataset with counting keywords per offer, with no extra columns
+4.  entire dataset with counting keywords per offer, with extra columns
+
+<!-- As shown on the plots below the assumption works fine for RF and GLM. XGBoost however behaves differently (f.e. it outperforms GLM with crossvalidation applied and is worse than GLM when it's up to average/combined ROCs) and it was not clear for us why this phenomenom occurs. -->
+
+<!-- (plots) -->
+
+#### There and ... never back again
+
+After described assumptions were made we were ready to try some machine learning on our dataset. First wasn't a spectacular success. On the contrary - it went rather bad. The average/combined ROCs from the first ML attempt are shown on the plot below.
+
+![](eachTraining/dbAll/plots/portraitROCzoom_old.png)
+
+After the first phase we decided to perform some data-manipulation operations that turned out to be unsuccessful (they were not complete failures, they just didn't push ROC towards upper left corner sufficiently). At this point we knew we were doomed to read through few hundreds of offers in order to retag Data Science offers properly. During this phase we also expanded our initial keyword/key phrases dictionary. As the result we obtained about 16000 offers in tagged dataset (in comparison to ~15000 rows in the preious data frame) with 149 columns/keywords (~100 in the primary dataset). That concluded the first phase of machine learning.
+
+The second phase utilised new data. The new ROCs obtained after new machine learning iteration are ploted below. At this point we decided to tinker with data a little bit (all data-manipulation activities will be described later on), i.e.:
+
+- try to add/remove/group certain columns - the only columns that improved Random Forest's accuracy were columns in which we summed up Data Science/Programming/Database/Universal keywords appearing in each offer,
+
+- count the appearances of keywords in offer instead of simply indicating if the keyword appeared in the offer or not (f.e. if phrase 'Teradata' was found 3 times in the offer we put 3 in the 'Teradata' column instead of simply putting there 1).
+  
+The new dataframe was then used in the phase 3 of our machine learning activities.
+
+The ROCs from the third phase are ploted below. At this point it was clear that Random Forest method outperformed every other method we tried and would be selected for crossvalidation. The crossvalidation will be discussed in the paragraph below.
+
+#### Caret package – training the best of them all
+
+Once we determined which method will suit our purpose best it was time to look for the best possible Random Forest around. We used training with cross validation available in caret package (trainControl() and train() functions to be specific). We used 3 rounds and 10 folds which explicitly means that main dataset was divided into 10 subsets, on each subset one model was trained in three different ways – with small amount of variables to be considered for each tree split, medium and large. This procedure was repeated 3 times (for each subset) and the model with the lowest average error (uściślić) was chosen as the best one. To sum things up there were 10 subsets, 3 models were trained for each subset (f.e. once with 2 variables to choose from per each tree split, once with 72 variables per split and once with 150) and this 10 * 3 procedure was repeated 3 times. The ROC for the best RF is shown below.
+
+### Data manipulation 
 
 #### Database grouping
 
-Data Scientist constantly have to work with different kinds od databases. There are over 300 of them included in ranking at [db-engines site](http://db-engines.com/en/ranking). The data consistent of database name, type and score was scraped from that source. For practical reasons, all of the unpopular systems (with score below 1) were discarded. There were 3 rounds of teaching models depandant on databases grouping:
+Data Scientist constantly have to work with different kinds od databases. There are over 300 of them included in ranking at [db-engines site](http://db-engines.com/en/ranking). The data consistent of database name, type and score was scraped from that source. For practical reasons, all of the unpopular systems (with score below 1 - almost 2/3 of them) were discarded. There were 3 rounds of teaching models depandant on databases grouping:
 
 1. **dbAll** - all databases have their unique column (f.e. PostgreSQL, Redis, MongoDB, Neo4j, Cassandra)
 2. **dbTypes** - all databases occurrences are represented in their corresponding groups (f.e. Relational, Key-value, Document, Graph, Wide column)
@@ -328,9 +388,17 @@ One can see that neither any of groups nor one of two columns appeared on VIPs. 
 
 One can observe that performances are almost identical for each database grouping and that always the best option (by a tiny bit for XGB) was to keep all databases in their separate columns.
 
+#### Counting keywords/key phrases
+
+As mentioned above, in order to improve models' performance we decided to count how many times each keyword would appear in a given offer instead of simply indicating with '0' or '1' if the keyword was present in the job description or not. This trick noteably increased all models' performance. Results are shown on the ROC plots. This procedure was also described in other paragraph of this paper.
+
+#### Counting specific skills
+
+In one of the attempts to increase the models' performace we decided to create 4 new columns in which we would sum Data Science, Programming, Database and Universal skills. We arbitraly decided which of the keywords are indicating on Data Science, Programming, Database or Universal skills - our skill classification is shown in the table below. After the skill classification was ready we simply summarised every type of skill per offer (f.e. if R was found 3 times, Google Analytics once, and MS Access was found 2 times in one offer DS\_skill column for that offer would equal to 4 and DB\_skill would equal to 2). The influence of this operation is shown on plot below.
+
 #### Repeated cross validation
 
-Knowing the best data form in respect of databases, we tried to achieve better results by repeated cross validation from caret package. This library do not support XGBoost objects - but as previously mentioned - XGBoost was created for cross validation from the beginning.
+Knowing the best data form we tried to achieve better results by repeated cross validation from caret package. This library do not support XGBoost objects - but as previously mentioned - XGBoost was created for cross validation from the beginning.
 
 ![](crossValidation/dbAll/plots/portraitROCzoom.png)
 
@@ -346,7 +414,7 @@ Below are visualized differences for two different approaches - data split and r
 
 Below are optimal cutpoints and areas under curves for cross validated models:
 
-```{r echo = FALSE}
+```{r}
 ocauc <- fromJSON("crossValidation/dbAll/data/ocaucAll.json")
 data_frame(
   c("GLM", "RF", "XGB"),
@@ -360,7 +428,7 @@ data_frame(
 
 For now the best model was obtained by repeated cross validation for Random Forest - it has the highest TPR + TNR sum. Therefore we present the confusion matrix for this solution:
 
-```{r echo = FALSE}
+```{r}
 tab <- get(load("crossValidation/dbAll/data/tabAll.Rda"))
 data_frame(
   c(
