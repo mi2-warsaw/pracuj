@@ -11,6 +11,7 @@ output:
     toc_depth: 5
     toc_float: true
     number_sections: true
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
@@ -350,41 +351,71 @@ Below are ROCs and Variable Importance Plots for 20 most important variables (fi
 
 ![](eachTraining/dbAll/plots/portraitROCzoom.png)
 
-![](eachTraining/dbAll/plots/portraitVIPGLM.png)
 
-![](eachTraining/dbAll/plots/portraitVIPRF.png)
+```{r, echo = FALSE}
+selectInput(
+  "cDP_VIP", "Method:", c("GLM", "RF", "XGB"), ""
+)
 
-![](eachTraining/dbAll/plots/portraitVIPXGB.png)
+renderImage(
+  list(
+    src = switch(
+      input$cDP_VIP,
+      GLM = "eachTraining/dbAll/plots/portraitVIPGLM.png",
+      RF = "eachTraining/dbAll/plots/portraitVIPRF.png",
+      XGB = "eachTraining/dbAll/plots/portraitVIPXGB.png"
+    )
+  ),
+  deleteFile = FALSE,
+  outputArgs = list(
+    height = "50%"
+  )
+)
+```
+
+```{r}
+tabsetPanel(
+  tabPanel("GLM", img(src = "eachTraining/dbAll/plots/portraitVIPGLM.png")),
+  tabPanel("RF", img(src = "eachTraining/dbAll/plots/portraitVIPRF.png")),
+  tabPanel("XGB", img(src = "eachTraining/dbAll/plots/portraitVIPXGB.png"))
+)
+```
 
 ##### dbTypes
 
 ![](eachTraining/dbTypes/plots/portraitROCzoom.png)
 
-![](eachTraining/dbTypes/plots/portraitVIPGLM.png)
-
-![](eachTraining/dbTypes/plots/portraitVIPRF.png)
-
-![](eachTraining/dbTypes/plots/portraitVIPXGB.png)
+```{r}
+tabsetPanel(
+  tabPanel("GLM", img(src = "eachTraining/dbTypes/plots/portraitVIPGLM.png")),
+  tabPanel("RF", img(src = "eachTraining/dbTypes/plots/portraitVIPRF.png")),
+  tabPanel("XGB", img(src = "eachTraining/dbTypes/plots/portraitVIPXGB.png"))
+)
+```
 
 ##### dbBinary
 
 ![](eachTraining/dbBinary/plots/portraitROCzoom.png)
 
-![](eachTraining/dbBinary/plots/portraitVIPGLM.png)
-
-![](eachTraining/dbBinary/plots/portraitVIPRF.png)
-
-![](eachTraining/dbBinary/plots/portraitVIPXGB.png)
+```{r}
+tabsetPanel(
+  tabPanel("GLM", img(src = "eachTraining/dbBinary/plots/portraitVIPGLM.png")),
+  tabPanel("RF", img(src = "eachTraining/dbBinary/plots/portraitVIPRF.png")),
+  tabPanel("XGB", img(src = "eachTraining/dbBinary/plots/portraitVIPXGB.png"))
+)
+```
 
 One can see that neither any of groups nor one of two columns appeared on VIPs. Furthermore, always the best output was achieved by the Random Forest method.
 
 ##### Combinded
 
-![](eachTraining/plots/portraitROCGLMzoom.png)
-
-![](eachTraining/plots/portraitROCRFzoom.png)
-
-![](eachTraining/plots/portraitROCXGBzoom.png)
+```{r}
+tabsetPanel(
+  tabPanel("GLM", img(src = "eachTraining/plots/portraitROCGLMzoom.png")),
+  tabPanel("RF", img(src = "eachTraining/plots/portraitROCRFzoom.png")),
+  tabPanel("XGB", img(src = "eachTraining/plots/portraitROCXGBzoom.png"))
+)
+```
 
 One can observe that performances are almost identical for each database grouping and that always the best option (by a tiny bit for XGB) was to keep all databases in their separate columns.
 
@@ -406,11 +437,13 @@ One can see that XGBoost now outperforms GLM but still is beaten by Random Fores
 
 Below are visualized differences for two different approaches - data split and repeated cross validation:
 
-![](plots/portraitROCGLMapproachzoom.png)
-
-![](plots/portraitROCRFapproachzoom.png)
-
-![](plots/portraitROCXGBapproachzoom.png)
+```{r}
+tabsetPanel(
+  tabPanel("GLM", img(src = "plots/portraitROCGLMapproachzoom.png")),
+  tabPanel("RF", img(src = "plots/portraitROCRFapproachzoom.png")),
+  tabPanel("XGB", img(src = "plots/portraitROCXGBapproachzoom.png"))
+)
+```
 
 Below are optimal cutpoints and areas under curves for cross validated models:
 
@@ -454,3 +487,168 @@ conMat(tab)
 ```
 
 It is highly probable that the most of those 271 False Positives are actual Data Science offers that we did not tag as positive due to time shortage and human error.
+
+# Analysis
+
+```{r}
+skillsGroups <- read_csv("data/prog_tag_skills_table_names.csv")
+
+for (i in seq_len(nrow(skillsGroups))) {
+  skillsGroups$skill_multip[i] <- ifelse(
+    skillsGroups$skill_multip[i] == 1, skillsGroups$df_full_n[i], NA
+  )
+  skillsGroups$DS_skill[i] <- ifelse(
+    skillsGroups$DS_skill[i] == 1, skillsGroups$df_full_n[i], NA
+  )
+  skillsGroups$Prog_skill[i] <- ifelse(
+    skillsGroups$Prog_skill[i] == 1, skillsGroups$df_full_n[i], NA
+  )
+  skillsGroups$DB_skill[i] <- ifelse(
+    skillsGroups$DB_skill[i] == 1, skillsGroups$df_full_n[i], NA
+  )
+  skillsGroups$Universal_skill[i] <- ifelse(
+    skillsGroups$Universal_skill[i] == 1, skillsGroups$df_full_n[i], NA
+  )
+}
+
+skillsGroups <- skillsGroups %>%
+  filter(df_full_n != "id") %>%
+  as.list() %>%
+  tail(4) %>%
+  lapply(function(x) {
+    x <- x %>%
+      na.omit()
+    attributes(x) <- NULL
+    x
+  })
+
+sumTab <- read_csv("data/prog_tag_skills_table_KW_COUNT_retagged_XtraCols.csv")
+set.seed(42)
+sumTab <- sumTab %>%
+  #  rename(isProgrammist = Is_Programmist, isDS = Is_DataScientist) %>%
+  select(-id) %>%
+  mutate(
+    date = seq(as.Date('1990/01/01'), as.Date('1990/09/30'), "day") %>%
+      sample(nrow(sumTab), replace = TRUE),
+    month = lubridate::month(date)
+  )
+
+# words2Cloud <- sumTab %>%
+#   select(
+#     -c(id, DS_skill, Prog_skill, DB_skill, Universal_skill, date, month)
+#   ) %>%
+#   colSums() %>%
+#   mapply(
+#     function(x, y) {
+#       rep(y, x)
+#     }, ., names(.)
+#   ) %>%
+#   unlist() %>%
+#   unname()
+
+words2Cloud <- sumTab %>%
+  select(
+    -c(
+      DS_skill,
+      Prog_skill,
+      DB_skill,
+      Universal_skill,
+      date,
+      month,
+      Is_DataScientist
+    )
+  ) %>%
+  colSums() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  as_data_frame() %>%
+  setNames(c("words", "freq"))
+
+fluidRow(
+  column(
+    3,
+    selectInput(
+      "groups",
+      "Group:",
+      c("Data Science", "Programming", "Databases", "Universal"),
+      ""
+    )
+  ),
+  column(
+    4,
+    renderUI({
+      currentSkills <- switch(
+        input$groups,
+        `Data Science` = skillsGroups$DS_skill,
+        Programming = skillsGroups$Prog_skill,
+        Databases = skillsGroups$DB_skill,
+        Universal = skillsGroups$Universal_skill
+      )
+      selectInput("skills", "Skill:", currentSkills, "")
+    })
+  ),
+  column(
+    5,
+    dateRangeInput(
+      "date",
+      "Date:",
+      sumTab$date %>% min(),
+      sumTab$date %>% max(),
+      sumTab$date %>% min(),
+      sumTab$date %>% max()
+    )
+  )
+)
+
+renderPlot({
+  toPlot <- sumTab %>%
+    mutate(skill = .[input$skills] %>% unlist()) %>%
+    filter(date %in% input$date[1]:input$date[2]) %>%
+    select(skill, month) %>%
+    group_by(month) %>%
+    summarise(skill = sum(skill))
+  skillSpan <- max(toPlot$skill) - min(toPlot$skill)
+  seqBy <- if (between(skillSpan, 0, 10)) {
+    1
+  } else if (between(skillSpan, 11, 50)) {
+    2
+  } else if (between(skillSpan, 51, 100)) {
+    5
+  } else if (between(skillSpan, 101, 1000)) {
+    10
+  } else {
+    100
+  }
+  ggplot2::qplot(data = toPlot, month, skill) +
+    scale_x_continuous(breaks = 1:9, labels = locale()$date_names$mon[1:9]) +
+    scale_y_continuous(
+      #breaks = seq(0, 10^4, 2)
+      breaks = seq(0, 10^4, seqBy)
+    ) +
+    geom_smooth(level = 0.25) +
+    xlab("Months") +
+    ylab("Number of skill occurrences") +
+    theme(panel.grid.minor = element_blank())
+})
+  # toPlot <- sumTab %>%
+  #   filter(date %in% input$date[1]:input$date[2]) %>%
+  #   select(-date) %>%
+  #   group_by(month) %>%
+  #   summarise_all(sum)
+  # toPlot <- toPlot %>%
+  #   mutate(skill = (toPlot[input$skills] %>% unlist()))
+  # ggplot2::qplot(data = toPlot, month, skill)
+library(wordcloud)
+
+w2c <- words2Cloud %>%
+  filter(words != "Analitics_analysis") %>%
+  mutate(words = words %>% tolower())
+wordcloud(
+  w2c$words,
+  w2c$freq,
+  c(3, .5),
+  max.words = 50,
+  random.order = FALSE,
+  colors = brewer.pal(8, "Dark2")
+)
+```
