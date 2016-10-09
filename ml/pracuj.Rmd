@@ -302,10 +302,10 @@ During entire machine learning phase following assumptions were made:
 
 'Such a thing' reffers to the first assumption made. It was not as obvious as it would seem however we decided to consider it true (after doing some research) because of one simple thing - time. Repeated crossvalidation for a single method (especially Random Forest) was very time consuming. We had plenty of ideas about what could be done with data (adding/removing columns, grouping them, etc.) in order to improve model's efficiency and performing crossvalidation for each and every idea/data modification would infinitely increase the time we would have to spend on this project. Keep in mind that we initiated our data-manipulation activities when the model efficiency was very poor (plot n) and we really wanted to avoid manual data tagging - hence we experimented a lot with data frame. To be fair we performed a short research in order to see if we were not wrong to consider first assumption to be true. We performed crossvalidations for 4 datasets:
 
-1.  entire 0-1 dataset (without counting the keywords) with no extra columns
-2.  entire 0-1 dataset with extra columns
-3.  entire dataset with counting keywords per offer, with no extra columns
-4.  entire dataset with counting keywords per offer, with extra columns
+1.  case 1. - entire 0-1 dataset (without counting the keywords) with no extra columns
+2.  case 2. - entire 0-1 dataset with extra columns
+3.  case 3. - entire dataset with counting keywords per offer, with no extra columns
+4.  case 4. - entire dataset with counting keywords per offer, with extra columns
 
 <!-- As shown on the plots below the assumption works fine for RF and GLM. XGBoost however behaves differently (f.e. it outperforms GLM with crossvalidation applied and is worse than GLM when it's up to average/combined ROCs) and it was not clear for us why this phenomenom occurs. -->
 
@@ -331,9 +331,9 @@ The ROCs from the third phase are ploted below. At this point it was clear that 
 
 #### Caret package – training the best of them all
 
-Once we determined which method will suit our purpose best it was time to look for the best possible Random Forest around. We used training with cross validation available in caret package (trainControl() and train() functions to be specific). We used 3 rounds and 10 folds which explicitly means that main dataset was divided into 10 subsets, on each subset one model was trained in three different ways – with small amount of variables to be considered for each tree split, medium and large. This procedure was repeated 3 times (for each subset) and the model with the lowest average error (uściślić) was chosen as the best one. To sum things up there were 10 subsets, 3 models were trained for each subset (f.e. once with 2 variables to choose from per each tree split, once with 72 variables per split and once with 150) and this 10 * 3 procedure was repeated 3 times. The ROC for the best RF is shown below.
+Once we determined which method will suit our purpose best it was time to look for the best possible Random Forest around. We used training with cross validation available in caret package (trainControl() and train() functions to be specific). We used 3 rounds and 10 folds which explicitly means that main dataset was divided into 10 subsets, on each subset one model was trained in three different ways – with small amount of variables to be considered for each tree split, medium and large. This procedure was repeated 3 times (for each subset) and the model with the lowest average error was chosen as the best one. To sum things up there were 10 subsets, 3 models were trained for each subset (f.e. once with 2 variables to choose from per each tree split, once with 72 variables per split and once with 150) and this 10 * 3 procedure was repeated 3 times. The ROC for the best RF is shown below.
 
-### Data manipulation 
+### Detailed description of data manipulation and model training activities
 
 #### Database grouping
 
@@ -419,17 +419,64 @@ tabsetPanel(
 
 One can observe that performances are almost identical for each database grouping and that always the best option (by a tiny bit for XGB) was to keep all databases in their separate columns.
 
+### Counting keywords/key phrases and counting/categorizing specific skills
+
 #### Counting keywords/key phrases
 
-As mentioned above, in order to improve models' performance we decided to count how many times each keyword would appear in a given offer instead of simply indicating with '0' or '1' if the keyword was present in the job description or not. This trick noteably increased all models' performance. Results are shown on the ROC plots. This procedure was also described in other paragraph of this paper.
+As mentioned above, in order to improve models' performance we decided to count how many times each keyword would appear in a given offer instead of simply indicating with '0' or '1' if the keyword was present in the job description or not. This trick noteably increased all models' performance. Results are shown on the ROC plots. This procedure was also described in other paragraph of this paper (for more detailed description go to paragraph 3.2.3.4 - Data post-processing).
 
 #### Counting specific skills
 
-In one of the attempts to increase the models' performace we decided to create 4 new columns in which we would sum Data Science, Programming, Database and Universal skills. We arbitraly decided which of the keywords are indicating on Data Science, Programming, Database or Universal skills - our skill classification is shown in the table below. After the skill classification was ready we simply summarised every type of skill per offer (f.e. if R was found 3 times, Google Analytics once, and MS Access was found 2 times in one offer DS\_skill column for that offer would equal to 4 and DB\_skill would equal to 2). The influence of this operation is shown on plot below.
+In one of the attempts to increase the models' performace we decided to create 4 new columns in which we would sum Data Science, Programming, Database and Universal skills. We arbitraly decided which of the keywords are indicating on Data Science, Programming, Database or Universal skills - our skill classification is shown in the table below. After the skill classification was ready we simply summarised every type of skill per offer (f.e. if R was found 3 times, Google Analytics once, and MS Access was found 2 times in one offer DS\_skill column for that offer would equal to 4 and DB\_skill would equal to 2).
+
+#### Results of two later data manipulation activities
+
+In order to present our results we prepared plenty of plots. It may be that they are shown a bit late in this article but we thought presenting them near the conclusion of this chapter would illustrate well what worked for us and how did it affect the trained models.
+
+First we would like to present the effect the described data manipulations (counting specific skills and counting keywords/key phrases) had  on the model. First two plots show how each model (Random Forest and GLM) responded to data tweaks. Just as a quick reminder:
+
+-  case 1. - entire 0-1 dataset (without counting the keywords) with no extra columns
+-  case 2. - entire 0-1 dataset with extra columns
+-  case 3. - entire dataset with counting keywords per offer, with no extra columns
+-  case 4. - entire dataset with counting keywords per offer, with extra columns
+
+```{r}
+tabsetPanel(
+  tabPanel("GLM", img(src = "plots/averageComparison/GLM/averageGLMComparison.png")),
+  tabPanel("RF", img(src = "plots/averageComparison/RF/averageRFComparison.png"))
+)
+```
+
+One may observe that Random Forest's AUC (as well as other accuracy measures) was always increased by data manipulations.
+The case with GLM was slightly different. Despite the fact that counting keywords helped to increase AUC the extra columns always ruined the model. (komentarz od rozkładach zmiennych ? )
+
+We would also like to show that Random Forest was always closer to the (1,0) point of the ROC plot with following plots created for every data manipulation step:
+
+```{r}
+tabsetPanel(
+  tabPanel("case 1.", img(src = "plots/averageComparison/RFvsGLM/rawCols_01.png")),
+  tabPanel("case 2.", img(src = "plots/averageComparison/RFvsGLM/xtraCols_01.png")),
+  tabPanel("case 3.", img(src = "plots/averageComparison/RFvsGLM/rawCols_KWCount.png")),
+  tabPanel("case 4.", img(src = "plots/averageComparison/RFvsGLM/xtraCols_KWCount.png"))
+)
+```
+
+The domination of Random Forest is undeniable. One may ask "Well, well, but how about the XGBoost's performance?" of course. As mentioned above we decided not to "average" XGBoost's performance due to the specifity of xgb.cv()) method. This method allows one to quickly tweak training parameters in order to obtain the best possible XGBoost model for a given dataset. We decided it would be pointless to compare "averaged" methods against the crossvalidated one and therefore we ruled XGBoost out of "averaged" comparison.
+
+In order to check the variables importance stability the following boxplots were created (Random Forest's variable stability is ploted for case 4. dataset, however GLM's variable stability was ploted for case 3. dataset).
+
+
+```{r}
+tabsetPanel(
+  tabPanel("GLM", img(src = "plots/averageComparison/GLM_varImpStab.png")),
+  tabPanel("RF", img(src = "plots/averageComparison/RF_varImpStab.png"))
+)
+```
+
 
 #### Repeated cross validation
 
-Knowing the best data form we tried to achieve better results by repeated cross validation from caret package. This library do not support XGBoost objects - but as previously mentioned - XGBoost was created for cross validation from the beginning.
+Knowing the best data form we tried to achieve better results by repeated cross validation from caret package. This library does not support XGBoost objects - but as previously mentioned - XGBoost was created for cross validation from the beginning.
 
 ![](crossValidation/dbAll/plots/portraitROCzoom.png)
 
@@ -444,6 +491,34 @@ tabsetPanel(
   tabPanel("XGB", img(src = "plots/portraitROCXGBapproachzoom.png"))
 )
 ```
+
+In order to be certain that our assumptions were correct we decided to perform crossvalidation for the following datasets:
+
+-  case 1. - entire 0-1 dataset (without counting the keywords) with no extra columns
+-  case 2. - entire 0-1 dataset with extra columns
+-  case 3. - entire dataset with counting keywords per offer, with no extra columns
+-  case 4. - entire dataset with counting keywords per offer, with extra columns
+
+We compared models against each other (RF vs GLM vs XGB):
+
+```{r}
+tabsetPanel(
+  tabPanel("case 1.", img(src = "plots/cvAll/rawCols_01.png")),
+  tabPanel("case 2.", img(src = "plots/cvAll/xtraCols_01.png")),
+  tabPanel("case 4.", img(src = "plots/cvAll/xtraCols_KWCount.png"))
+)
+```
+
+As well as against themselves trained of different sets of data (RF(case 1. dataset) vs RF(case 2. dataset) vs RF(case 3. dataset) vs RF(case 4. dataset)):
+
+```{r}
+tabsetPanel(
+  tabPanel("GLM", img(src = "plots/cvGLM/bestGLMComparison.png")),
+  tabPanel("RF.", img(src = "plots/cvRF/bestRFsComparison.png")),
+  tabPanel("XGB", img(src = "plots/cvXGB/bestXGBComparison.png"))
+)
+```
+Presented plots clearly indicate that our data manipulation (not all the way for GLM - for this method the case 3. dataset turned out to be the best one) went in rather good direction and enhanced trained models. We decided that the best Random Forest model would be utilised for scoring the downloaded offers. The "mpar" was equal to 76 (0,5 * numberOfVariables) for the best RF. The variable importance for the best Random Forest will be shown as a part of "Analysis" paragraph of this paper.
 
 Below are optimal cutpoints and areas under curves for cross validated models:
 
@@ -522,17 +597,10 @@ skillsGroups <- skillsGroups %>%
     x
   })
 
-sumTab <- read_csv("data/prog_tag_skills_table_KW_COUNT_retagged_XtraCols.csv")
-set.seed(42)
-sumTab <- sumTab %>%
-  #  rename(isProgrammist = Is_Programmist, isDS = Is_DataScientist) %>%
-  select(-id) %>%
-  mutate(
-    date = seq(as.Date('1990/01/01'), as.Date('1990/09/30'), "day") %>%
-      sample(nrow(sumTab), replace = TRUE),
-    month = lubridate::month(date)
-  )
+sumTab <- read_csv("data/bigKWCountTab_dates.csv") %>% 
+          select(-id)
 
+ 
 # words2Cloud <- sumTab %>%
 #   select(
 #     -c(id, DS_skill, Prog_skill, DB_skill, Universal_skill, date, month)
@@ -549,13 +617,9 @@ sumTab <- sumTab %>%
 words2Cloud <- sumTab %>%
   select(
     -c(
-      DS_skill,
-      Prog_skill,
-      DB_skill,
-      Universal_skill,
       date,
       month,
-      Is_DataScientist
+      year
     )
   ) %>%
   colSums() %>%
@@ -620,9 +684,8 @@ renderPlot({
     100
   }
   ggplot2::qplot(data = toPlot, month, skill) +
-    scale_x_continuous(breaks = 1:9, labels = locale()$date_names$mon[1:9]) +
+    scale_x_continuous(breaks = 1:12, labels = locale()$date_names$mon[1:12]) +
     scale_y_continuous(
-      #breaks = seq(0, 10^4, 2)
       breaks = seq(0, 10^4, seqBy)
     ) +
     geom_smooth(level = 0.25) +
@@ -642,6 +705,7 @@ library(wordcloud)
 
 w2c <- words2Cloud %>%
   filter(words != "Analitics_analysis") %>%
+  filter(words != "Computer_science") %>%
   mutate(words = words %>% tolower())
 wordcloud(
   w2c$words,
