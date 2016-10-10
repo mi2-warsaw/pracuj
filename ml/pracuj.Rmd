@@ -89,19 +89,19 @@ conMat <- function(tab) {
 ```
 
 # Introduction
-Usually academic teaching programme lags behind the real world requirements - we have learned that this time-gap could be as big as two years. In order to remedy this quite excessive time lag [prof. Przemysław Biecek](http://biecek.pl/) from MiNI (faculty of Mathematics and Informational Studies) at Warsaw University of Technology decided to assign us (interns at MI2 group) to a task – extract and identify skills needed by data science industry in order to align teaching with current needs.
+Usually academic teaching programme lags behind the real world requirements - we have learned that this time-gap could be as big as two years. In order to remedy this quite excessive time lag [prof. Przemysław Biecek](http://biecek.pl/) from MiNI (faculty of Mathematics and Informational Studies) at Warsaw University of Technology decided to assign us (interns at MI2 group) a task – extract and identify skills needed by data science industry in order to align teaching with the current needs.
 
 # Masterplan
 
-Although the idea may appear as a simple task - it wasn't. We would have never made it if not for the professor's general idea about how things should be done. The main idea was to download a lot of job offers, tag offers according to “is/is not data scientist” scheme, train ML model on downloaded data, predict if fresh/“unseen” by the model offer is from the DS industry or not and extract most popular/needed skills from all DS offers. Prof. Biecek developed the following plan:
+Although the idea may appear as a simple task - it wasn't. We would have never made it if not for the professor's general idea about how things should be done. The main concept was to download a lot of job offers, decide if offer “is/is not data scientist” and tag it, train machine learning model on downloaded data, predict if fresh/“unseen” by the model offer is from the DS industry or not and extract most popular/needed skills from all DS offers. The plan can be summarised as follows:
 
-1. Pick the website with job offers (we chose [pracuj.pl](http://www.pracuj.pl/)) and acquire needed data:
+1. Pick the website with job offers (he chose [pracuj.pl](http://www.pracuj.pl/)) and acquire needed data:
     + either by asking politely website's administration
     + or by web-scraping
 2. Clean and filter the downloaded data (perform elementary analysis)
 3. Prepare data for machine learning algorithms (proper tagging and data format)
 4. Perform machine learning on previously prepared data
-5. Present and analyse results
+5. Analyse outcome data and present results
 
 We had to choose the way of data-scraping because we had no response for our data requests.
 
@@ -109,7 +109,7 @@ We had to choose the way of data-scraping because we had no response for our dat
 
 ## Scraping
 
-In order to analyse data we had to download it first. Therefore we developed web-scraping script in R. The script utilized rvest package and css tags were obtained with [SelectorGadget](http://selectorgadget.com/) addon. The content that the script targeted and downloaded was immediately uploaded into PostgreSQL database (or rather one simple table with offer's id, description, employer's name etc...). One can access the gathered data either by a function in our ['pracuj' package](https://github.com/mi2-warsaw/pracuj/tree/master/pracuj) or by connecting via options below:
+In order to analyse the data we had to download it first. Therefore we developed a web-scraping script in R. The script utilized rvest package and css tags, which were obtained with [SelectorGadget](http://selectorgadget.com/) addon. The content that the script targeted and downloaded was immediately uploaded into PostgreSQL database (or rather one simple table with offer's id, description, employer's name etc...). One can access the gathered data either by a function in our ['pracuj' package](https://github.com/mi2-warsaw/pracuj/tree/master/pracuj) or by connecting via options below:
 ```{r}
 data_frame(
   dbname = "pracuj",
@@ -145,7 +145,7 @@ example$positive_phrase <- NULL
 kable(example)
 ```
 
-Some of the cells may not contain any information – that is because of the scraper's evolution during project's development. Some functionality was added long after the core of the scraping algorithm was created.
+Some of the cells may not contain any information – this is because of the scraper's evolution during project's development. Some of the functionality was added long after the core of the scraping algorithm was created.
 
 After the data was downloaded we could initiate the filtering and data-cleaning procedures. They were the most time consuming operations.
 
@@ -153,9 +153,7 @@ After the data was downloaded we could initiate the filtering and data-cleaning 
 
 ### Rapid problem description
 
-Why did we bother to filter and clean the data? We needed to feed the ML algorithms (GLM, Random Forest or XGBoost) tagged data to learn on and therefore we wanted to know which downloaded offer is for data scientist and which one is not. This is where we decided we would try to make tagging (determining if offer is for a DS or not) automatic (at that point we had about 40 thousands of job offers downloaded).
-
-Initially the downloaded information was messy and unwilling to cooperate. Even the coding was wrong - we had to switch to Linux and it's UTF-8 codepage to be able to read and write polish characters properly.
+We needed to feed the ML algorithms (GLM, Random Forest or XGBoost) tagged data to learn on and therefore we wanted to know which downloaded offer is for data scientist and which one is not. This is where we decided we would try to make tagging (determining if offer is for a DS or not) automatic (at that point we had about 40 thousands of job offers downloaded).
 
 ### First filtering attempt
 
@@ -166,19 +164,19 @@ The first shot we took at data filtering and cleaning was creating a simple filt
 3. Filter data using both lists
 4. Conduct preliminary analysis (like frequency of appearance of a certain skill).
 
-It's fair to state that when this primitive filter was created we weren't able to download the job's description and therefore we had no better way of telling if an offer was for a DS or not. Sometime at this point we figured we will need a lot more keywords and whole descriptions to be able to perform machine learning. What we decided to use described algorithm for was “is/is not data scientist” tagging. The output of this script was simple table containing two columns: id and “is/is not DS”. Later on (during the machine learning phase) this tagging concept turned out to be badly flawed, however we still used its output as a starting point for a proper classification.
+It's fair to say that when this primitive filter was created we weren't able to download the job's description and therefore we had no better way of telling if an offer was for a DS or not. Sometime at this point we figured we will need a lot more keywords and whole descriptions to be able to perform machine learning. Initially we decided to use the described algorithm for “is/is not data scientist” tagging. The output of this script was simple table containing two columns: id and “is/is not DS”. Later on (during the machine learning phase) this tagging concept turned out to be badly flawed, however we still used its output as a starting point for a proper classification.
 
 ### Second filtering attempt
 
-#### The idea behind filtering algorithm
+#### The idea behind second filtering algorithm
 
 Few things were clear at the starting point of this chapter:
 
-* filtering would utilize keywords rather than context search (we figured that way would be much easier to do for the beginners like us),
-* we would have to search for specific skills/keywords/phrases - offers with description which did not contain any of specified skills/keywords were discarded (the assumption was that if there are no keywords found, the given offer could not possibly be a DS position),
+* filtering should utilize keywords rather than context search (we figured that way would be quite efficient and much easier for the beginners like us),
+* we would have to search for specific skills/keywords/phrases - offers with description which would not contain any of specified skills/keywords would be discarded (the assumption was that if there would be no keywords found, there would be no way of determining if an offer is a DS position),
 * the new dictionary would have to cover both hard skills (R, SAS, Java, JavaScript, ...) and (more or less) soft skills (analytical thinking, ad-hoc analysis, ...)
     
-To be specific we needed the data frame with 'ids' as primary keys and skills/keywords as column names. We decided to go for the data frame in which every skill name/keyword had it's column and every offer had it's row. The example of desired data structure is shown below. The '1' is placed in the proper column of a given row if the certain skill/keyword was found in offer's description. If the skill was not found the '0' value appeared in a certain row/column combination.
+In order to perform filtering, we needed the data frame with 'ids' as primary keys and skills/keywords as column names. We decided to go for the data frame in which every skill name/keyword would have its own column and every offer would have its own row. The example of desired data structure is shown below. The '1' is placed in the proper column of a given row if the certain skill/keyword was found in offer's description. If the skill was not found the '0' value appeared in a certain row/column combination.
 
 ```{r}
 sample <- read_csv("data/sample.csv")
@@ -187,9 +185,7 @@ kable(sample)
 
 #### Keywords selection
 
-We didn't spend as much time on filter as we did on tagging but the algorithm and the obstacles encountered are worth a few seconds to describe.
-
-First of all – we had to specify the keywords we would use to filter out offers that could be connected with DS industry. In order to do that we read more than a 1100 offers during two phases of keywords selection.
+First of all – we had to specify the keywords we would use to filter offers that could be connected with DS industry. In order to do that we read more than a 1100 offers during two phases of keywords selection.
 
 First phase was slightly similar to shooting blind - we visited pracuj.pl and searched for offers with 'data science', 'data engineering', 'big data' in their names. Initially we read only about 100 of them and extracted about 165 keywords/key phrases.
 
@@ -197,9 +193,16 @@ Second phase of keywords selection was conducted after the first iteration of ma
 
 #### The algorithm
 
-Algorithm in it's current form wasn't probably the most efficient way to deal with filtering but it worked and we will describe it as it was, not as we would like it to be. There are few simple steps in the procedure:
+Algorithm in it's current form wasn't probably the most efficient way to deal with filtering but it worked. There are few simple steps in the procedure:
 
-1. There was \*.csv file created for each keyword. The basic example of structure of the \*.csv file is shown below:
+1. Each keyword/key phrase was looked up in all offers' descriptions,
+
+2. When the keyword was found in the offer few things happened:
+    * offer's id was saved in the separate row,
+    * keyword, preceding and following word were put in the corresponding columns,
+    * if the keyword appeared more than once in one offer the procedure was repeated for each appearance (more than one row could have the same id in one file).
+
+3. There was \*.csv file created for each keyword. The basic example of structure of the \*.csv file is shown below:
 
 ```{r}
 data_frame(
@@ -210,21 +213,15 @@ data_frame(
 ) %>%
   kable()
 ```
-
-2. Each keyword/key phrase was looked up in all offers' descriptions,
-3. When the keyword was found in the offer few things happened:
-    * offer's id was saved in separate row,
-    * keyword, preceding and following word were put in the corresponding columns,
-    * if the keyword appeared more than once in one offer the procedure was repeated for each appearance (more than one row could have the same id in one file).
     
 When the filter was done with one particular phrase the *.csv file was saved and another keyword was looked up until there were no more keywords to search.
 
-Such \*.csv structure was needed for one purpose – simple context found phrases verification. After the first filtering iteration we decided to check if all the finds are the good ones (for example we searched for 'imap' and found 'optimaproudly'). In order to exclude false finds we created one more column in \*.csv structure – exception indicator column. In this column there were only two values allowed '1' or '0', where '1' indicated that the entire words combination should be excluded from search (preceding word + keyword/phrase + following word). We assigned those values manually (there was no other robust way to determine if the entire words combination was correct or not). Those 'exception indicators' were saved as different files as 'exceptions dictionaries'.
+Such \*.csv structure was needed for one purpose – simple context found phrases verification. After the first filtering iteration we decided to check if all of the finds are the good ones (for example we searched for 'imap' and found 'optimaproudly'). In order to exclude the false finds we created one more column in \*.csv structure – exception indicator column. In this column there were only two values allowed '1' or '0', where '1' indicated that the entire words combination should be excluded from search (preceding word + keyword/phrase + following word). We assigned those values manually (there was no other robust way to determine if the entire words combination was correct or not). Those 'exception indicators' were saved as different files - 'exceptions dictionaries'.
 Afterwards we re-filtered entire dataset and created new \*.csv files for every keyword.
 
 #### Data post-processing
 
-When the desired \*.csv files were created there was only one step left to do – create data frame for machine learning. We will only state that there are many ways to create needed data structure and it makes no difference which way you decide to use as long as the output is correct. However keep in mind that for the final ML model (to increase model's accuracy) we slightly modified the data structure – the keyword's appearances were totaled for each offer. The final data structure looked somewhat similar to:
+When the desired \*.csv files were created there was only one step left to do – create data frame for the machine learning. We will only state that there are many ways to create needed data structure and it makes no difference which way you decide to use as long as the output is correct. However keep in mind that for the final ML model (to increase model's accuracy) we slightly modified the data structure – the keyword's appearances were totaled for each offer. The final data structure looked somewhat like:
 
 ```{r}
 data_frame(
@@ -248,7 +245,7 @@ Why use machine learning algorithms for already tagged offers? Let us remember t
 
 #### General strategy
 
-In order to complete given task we followed a general plan which was devised by prof. Biecek. Our strategy could be summarised in few following points:
+Our strategy could be summarised in few following points:
 
   1.  Train 10 models for each method (GLM, RF, XGB),
   
@@ -262,9 +259,9 @@ In order to complete given task we followed a general plan which was devised by 
   
 #### Explanations and assumptions
   
-We belive some things (such as average ROCs) may need further explanations and we would like to do it in this paragraph. Let us start with explanations:
+We belive some things (such as average ROCs) may need further explanations and we would like to do it in this paragraph:
 
-  - combined/average ROC is a curve drawn for all 10 testing sets for each method. To be more clear - we got 10 data subsets from caret createDataPartition() method. Each subset consisted of training (75% of all tagged observations) and testing (25% of all tagged observations) set of data. Models were trained on training part of subset and evaluated on testing data frame for each of 10 subset. The idea behind the average/combined ROC was to combine 10 testing datasets row by row and plot one ROC for them. The basic concept is shown below:
+  - combined/average ROC was a curve drawn for all 10 testing sets for each method. To be more clear - we got 10 data subsets from caret createDataPartition() method. Each subset consisted of training (75% of all tagged observations) and testing (25% of all tagged observations) set of data. Models were trained on training part of subset and evaluated on testing data frame for each of 10 subset. The idea behind the average/combined ROC was to combine 10 testing datasets row by row and plot one ROC for them. The basic concept is shown below:
   
 Get 1. subset -> train 1. model on 1. train subset -> test 1. model on 1. test subset -> save the scores (| id | tag | model score |) for 1. test subset -> get 2. subset -> ... -> save the scores (| id | tag | model score |) for 10. test subset
 
@@ -286,9 +283,9 @@ data_frame(
   kable()
 ```
 
-It is mandatory to mention here, that XGBoost method was designed to train with cross validation so it would not be fair to compare results obtained from XGBoost in its prime to non cross validated GLM and Random Forest. We will do that later but for now XGBoost models will be trained only with one iteration to see how well it performs with minimal effort.
+It is mandatory to mention here, that XGBoost method was designed to train with cross validation so it would not be fair to compare results obtained from XGBoost in its prime to non cross validated GLM and Random Forest. We would do that later but for now XGBoost models would be trained only with one iteration.
 
-This way one ROC was drawn for 10 models of a single method (GLM, RF, XGB). We assumed that this was averaged ROC representative for the given method.
+  This way one ROC was drawn for 10 models of a single method (GLM, RF, XGB). We assumed that this was averaged ROC representative for the given method.
 
   - We did not experiment with different train/test ratios too much. The 'p' parameter was fixed at p = .75 for all data splitting attempts but repeated crossvalidation (where automatically p = 1/nfold)
 
@@ -298,9 +295,9 @@ During entire machine learning phase following assumptions were made:
   
   2. The larger the training set the better model would be trained,
   
-#### Why would someone assume such a thing?
+#### Motivation behind assumptions
 
-'Such a thing' reffers to the first assumption made. It was not as obvious as it would seem however we decided to consider it true (after doing some research) because of one simple thing - time. Repeated crossvalidation for a single method (especially Random Forest) was very time consuming. We had plenty of ideas about what could be done with data (adding/removing columns, grouping them, etc.) in order to improve model's efficiency and performing crossvalidation for each and every idea/data modification would infinitely increase the time we would have to spend on this project. Keep in mind that we initiated our data-manipulation activities when the model efficiency was very poor (plot n) and we really wanted to avoid manual data tagging - hence we experimented a lot with data frame. To be fair we performed a short research in order to see if we were not wrong to consider first assumption to be true. We performed crossvalidations for 4 datasets:
+The first assumption made was not as obvious as it would seem, however we decided to consider it true (after doing some research) because of one simple thing - time. Repeated crossvalidation for a single method (especially Random Forest) was very time consuming. We had plenty of ideas about what could be done with data (adding/removing columns, grouping them, etc.) in order to improve models' efficiency and performing crossvalidation for each and every idea/data modification would infinitely increase the time we would have to spend on this project. Keep in mind that we initiated our data-manipulation activities when the model efficiency was very poor and we really wanted to avoid manual data tagging - hence we experimented a lot with the data frame. To be fair we performed a short research in order to see if we were not wrong to consider first assumption to be true. We performed crossvalidations for 4 datasets:
 
 1.  case 1. - entire 0-1 dataset (without counting the keywords) with no extra columns
 2.  case 2. - entire 0-1 dataset with extra columns
@@ -317,9 +314,9 @@ After described assumptions were made we were ready to try some machine learning
 
 ![](eachTraining/dbAll/plots/portraitROCzoom_old.png)
 
-After the first phase we decided to perform some data-manipulation operations that turned out to be unsuccessful (they were not complete failures, they just didn't push ROC towards upper left corner sufficiently). At this point we knew we were doomed to read through few hundreds of offers in order to retag Data Science offers properly. During this phase we also expanded our initial keyword/key phrases dictionary. As the result we obtained about 16000 offers in tagged dataset (in comparison to ~15000 rows in the preious data frame) with 149 columns/keywords (~100 in the primary dataset). That concluded the first phase of machine learning.
+After the first phase we decided to perform some data manipulations that turned out to be unsuccessful (they were not complete failures, they just didn't push ROC towards upper left corner sufficiently). At this point we knew we were doomed to read through few hundred offers in order to retag them properly. During this phase we also expanded our initial keyword/key phrases dictionary. As the result we obtained about 16000 offers in tagged dataset (in comparison to ~15000 rows in the initial ML data frame) with 149 columns/keywords (~100 in the initial dataset). That concluded the first phase of machine learning.
 
-The second phase utilised new data. The new ROCs obtained after new machine learning iteration are ploted below. At this point we decided to tinker with data a little bit (all data-manipulation activities will be described later on), i.e.:
+The second phase utilised new data. The new ROCs obtained after new machine learning iterations are ploted below. At this point we decided to tinker with data a little bit (all data-manipulation activities will be described in detail later on), i.e.:
 
 - try to add/remove/group certain columns - the only columns that improved Random Forest's accuracy were columns in which we summed up Data Science/Programming/Database/Universal keywords appearing in each offer,
 
