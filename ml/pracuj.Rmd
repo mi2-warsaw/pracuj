@@ -514,7 +514,7 @@ As well as against themselves trained of different sets of data (RF(case 1. data
 ```{r}
 tabsetPanel(
   tabPanel("GLM", img(src = "plots/cvGLM/bestGLMComparison.png")),
-  tabPanel("RF.", img(src = "plots/cvRF/bestRFsComparison.png")),
+  tabPanel("RF", img(src = "plots/cvRF/bestRFsComparison.png")),
   tabPanel("XGB", img(src = "plots/cvXGB/bestXGBComparison.png"))
 )
 ```
@@ -564,6 +564,12 @@ conMat(tab)
 It is highly probable that the most of those 271 False Positives are actual Data Science offers that we did not tag as positive due to time shortage and human error.
 
 # Analysis
+
+First things first - unfortunately first two presented plots were created for unscored dataset, i.e. for entire job offers database. We did not manage to clean entire dataset before finishing that document and therefore we did not score it with our best model yet and that simply means the analysis was not performed with the distinction if the offer was/was not from data science market. We will perform scoring as soon as the big dataset is clear and update this paper.
+
+## Demand for given skills throughout the given time period
+
+Now let us briefly describe presented plots. First of all the reader may use shiny app below to investigate how popular was selected phrase during the period in which we archived offers. We leave those plots for a reader to analyse.
 
 ```{r}
 skillsGroups <- read_csv("data/prog_tag_skills_table_names.csv")
@@ -701,6 +707,14 @@ renderPlot({
   # toPlot <- toPlot %>%
   #   mutate(skill = (toPlot[input$skills] %>% unlist()))
   # ggplot2::qplot(data = toPlot, month, skill)
+```
+
+## Word cloud plot
+
+Below we would like to present the word cloud plot for entire dataset.
+
+```{r}
+
 library(wordcloud)
 
 w2c <- words2Cloud %>%
@@ -714,5 +728,28 @@ wordcloud(
   max.words = 50,
   random.order = FALSE,
   colors = brewer.pal(8, "Dark2")
+)
+```
+
+## How does it decide?
+
+Last two plots in this document show how important a given variable was (similar to varImpPlot()) and how popular were important keywords. The 'X' axis always was always scaled from 0 to 1. The plots were created in few simple steps:
+
+1. The 20 most important variables for final RF model were selected,
+
+2. Variables importance values were aquired and mapped to 0-1 vector (according to formula varImp(0-1) = varImp/max(varImp)).
+
+Steps 1. and 2. allowed us to create first plot (similar to varImpPlot())
+
+3. Values in columns of the filtered dataset (only offers for data scientists) were summed,
+
+4. The aquired values were mapped to 0-1 range (as was done with the variables importance values)
+
+Point 2. informed us how important was a given variable for the model, point 4. showed how popular were the most important skills for model. The plots are shown below.
+
+```{r}
+tabsetPanel(
+  tabPanel("Importance of variables for the best model", img(src = "plots/cvRF/bestRFVarImpPlot.png")),
+  tabPanel("Importance of variables vs their popularity", img(src = "plots/cvRF/importanceVsAppereance.png"))
 )
 ```
