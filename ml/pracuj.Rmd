@@ -538,6 +538,8 @@ For now the best model was obtained by repeated cross validation for Random Fore
 
 ```{r}
 tab <- get(load("crossValidation/dbAll/data/tabAll.Rda"))
+
+
 data_frame(
   c(
       "GLM",
@@ -562,6 +564,28 @@ conMat(tab)
 ```
 
 It is highly probable that the most of those 271 False Positives are actual Data Science offers that we did not tag as positive due to time shortage and human error.
+
+Below we would like to present the parameters of optimal cutpoint calculated for the best model:
+
+```{r}
+
+data.frame(
+            c("Best RF model"), 
+            c(0.119),
+            c(1.935),
+            c(0.993)
+           ) %>%
+  setNames(c("Method", "OC - Youden", "TPR + TNR Youden", "AUC")) %>%
+  kable()
+
+
+tab$RF$Youden$values$TP <- 406 - 19
+tab$RF$Youden$values$FP <- 289
+tab$RF$Youden$values$FN <- 19
+tab$RF$Youden$values$TN <- 16382 - 406 - 289
+
+conMat(tab)
+```
 
 # Analysis
 
