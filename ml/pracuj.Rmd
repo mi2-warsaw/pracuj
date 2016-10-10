@@ -718,7 +718,7 @@ renderPlot({
     scale_y_continuous(
       breaks = seq(0, 10^4, seqBy)
     ) +
-    geom_smooth(level = 0.25) +
+    geom_smooth(level = 0.1) +
     xlab("Months") +
     ylab("Number of skill occurrences") +
     theme(panel.grid.minor = element_blank())
