@@ -512,9 +512,9 @@ tab <- get(load("crossValidation/dbAll/data/tabAll.Rda"))
 
 data_frame(
   c(
-      "GLM",
-      "RF",
-      "XGB"
+    "GLM",
+    "RF",
+    "XGB"
     ),
   c(
     tab$GLM$Youden$ratios$TPR + tab$GLM$Youden$ratios$TNR,
@@ -596,27 +596,25 @@ In this chapter we would like to briefly present obtained results. We thought it
 First of all the reader may use shiny app below to investigate how popular was selected phrase during the selected time period. Upper plot shows skill popularity vs time for entire filtered dataset. The plot below shows skills popularity vs time only for data scientist (tagged by the best RF). There was inconsistency between those two datasets (full dataset and dataset only with data scientists) - the different number of columns. The model was trained on smaller dataset and sometimes the keyword found in large set of data was not found in training data. That is why the reader may see error while chooseing certain skill name (like torch7 or scikit_learn). We were aware of this problem but wanted to show all found skills without multiplying plots.  We leave those plots for a reader to analyse.
 
 ```{r}
-skillsGroups <- read_csv("data/prog_tag_skills_table_names.csv")
-
-for (i in seq_len(nrow(skillsGroups))) {
-  skillsGroups$skill_multip[i] <- ifelse(
-    skillsGroups$skill_multip[i] == 1, skillsGroups$df_full_n[i], NA
-  )
-  skillsGroups$DS_skill[i] <- ifelse(
-    skillsGroups$DS_skill[i] == 1, skillsGroups$df_full_n[i], NA
-  )
-  skillsGroups$Prog_skill[i] <- ifelse(
-    skillsGroups$Prog_skill[i] == 1, skillsGroups$df_full_n[i], NA
-  )
-  skillsGroups$DB_skill[i] <- ifelse(
-    skillsGroups$DB_skill[i] == 1, skillsGroups$df_full_n[i], NA
-  )
-  skillsGroups$Universal_skill[i] <- ifelse(
-    skillsGroups$Universal_skill[i] == 1, skillsGroups$df_full_n[i], NA
-  )
-}
-
-skillsGroups <- skillsGroups %>%
+setGroups <- function(skillsGroups) {
+  for (i in seq_len(nrow(skillsGroups))) {
+    skillsGroups$skill_multip[i] <- ifelse(
+      skillsGroups$skill_multip[i] == 1, skillsGroups$df_full_n[i], NA
+    )
+    skillsGroups$DS_skill[i] <- ifelse(
+      skillsGroups$DS_skill[i] == 1, skillsGroups$df_full_n[i], NA
+    )
+    skillsGroups$Prog_skill[i] <- ifelse(
+      skillsGroups$Prog_skill[i] == 1, skillsGroups$df_full_n[i], NA
+    )
+    skillsGroups$DB_skill[i] <- ifelse(
+      skillsGroups$DB_skill[i] == 1, skillsGroups$df_full_n[i], NA
+    )
+    skillsGroups$Universal_skill[i] <- ifelse(
+      skillsGroups$Universal_skill[i] == 1, skillsGroups$df_full_n[i], NA
+    )
+  }
+  skillsGroups %>%
   filter(df_full_n != "id") %>%
   as.list() %>%
   tail(4) %>%
@@ -627,37 +625,62 @@ skillsGroups <- skillsGroups %>%
     attributes(x) <- NULL
     x
   })
+}
 
-sumTab <- read_csv("data/bigKWCountTab_dates.csv") %>% 
-          select(-id) 
+words2Cloud <- function(sumTab) {
+  sumTab %>%
+    select(-c(date, month, year)) %>%
+    colSums() %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column() %>%
+    as_data_frame() %>%
+    setNames(c("words", "freq"))
+}
 
- 
-# words2Cloud <- sumTab %>%
-#   select(
-#     -c(id, DS_skill, Prog_skill, DB_skill, Universal_skill, date, month)
-#   ) %>%
-#   colSums() %>%
-#   mapply(
-#     function(x, y) {
-#       rep(y, x)
-#     }, ., names(.)
-#   ) %>%
-#   unlist() %>%
-#   unname()
+preparePlot <- function(toPlot) {
+  plotData <- toPlot %>%
+    mutate(skill = .[input$skills] %>% unlist()) %>%
+    filter(date %in% input$date[1]:input$date[2]) %>%
+    select(skill, month) %>%
+    group_by(month) %>%
+    summarise(skill = sum(skill))
+  skillSpan <- max(plotData$skill) - min(plotData$skill)
+  seqBy <- if (between(skillSpan, 0, 10)) {
+    1
+  } else if (between(skillSpan, 11, 50)) {
+    2
+  } else if (between(skillSpan, 51, 100)) {
+    5
+  } else if (between(skillSpan, 101, 1000)) {
+    10
+  } else if (between(skillSpan, 101, 1000)) {
+    100
+  } else {
+    500
+  }
+  list(plotData, seqBy) %>%
+    setNames(c("plotData", "seqBy"))
+}
 
-words2Cloud <- sumTab %>%
-  select(
-    -c(
-      date,
-      month,
-      year
-    )
-  ) %>%
-  colSums() %>%
-  as.data.frame() %>%
-  tibble::rownames_to_column() %>%
-  as_data_frame() %>%
-  setNames(c("words", "freq"))
+sg <- read_csv("data/prog_tag_skills_table_names.csv") %>%
+  setGroups()
+st <- read_csv("data/bigKWCountTab_dates.csv") %>%
+  select(-id)
+w2c <- words2Cloud(st)
+
+sgDS <- read_csv("data/prog_tag_skills_table_names_DS.csv") %>%
+  setGroups()
+stDS <- read_csv("data/bigKWCountTabDS_dates.csv") %>% 
+          select(-id)
+w2cDS <- words2Cloud(stDS) %>%
+  filter(
+    !(words %in% c(
+      "DS_skill",
+      "Prog_skill",
+      "Universal_skill",
+      "DB_skill"
+    ))
+  )
 
 fluidRow(
   column(
@@ -674,10 +697,10 @@ fluidRow(
     renderUI({
       currentSkills <- switch(
         input$groups,
-        `Data Science` = skillsGroups$DS_skill,
-        Programming = skillsGroups$Prog_skill,
-        Databases = skillsGroups$DB_skill,
-        Universal = skillsGroups$Universal_skill
+        `Data Science` = sg$DS_skill,
+        Programming = sg$Prog_skill,
+        Databases = sg$DB_skill,
+        Universal = sg$Universal_skill
       )
       selectInput("skills", "Skill:", currentSkills, "")
     })
@@ -687,204 +710,72 @@ fluidRow(
     dateRangeInput(
       "date",
       "Date:",
-      sumTab$date %>% min(),
-      sumTab$date %>% max(),
-      sumTab$date %>% min(),
-      sumTab$date %>% max()
+      st$date %>% min(),
+      st$date %>% max(),
+      st$date %>% min(),
+      st$date %>% max()
     )
   )
 )
 
 renderPlot({
-  toPlot <- sumTab %>%
-    mutate(skill = .[input$skills] %>% unlist()) %>%
-    filter(date %in% input$date[1]:input$date[2]) %>%
-    select(skill, month) %>%
-    group_by(month) %>%
-    summarise(skill = sum(skill))
-  skillSpan <- max(toPlot$skill) - min(toPlot$skill)
-  seqBy <- if (between(skillSpan, 0, 10)) {
-    1
-  } else if (between(skillSpan, 11, 50)) {
-    2
-  } else if (between(skillSpan, 51, 100)) {
-    5
-  } else if (between(skillSpan, 101, 1000)) {
-    10
-  } else {
-    100
-  }
-  ggplot2::qplot(data = toPlot, month, skill) +
+  toPlot <- preparePlot(st)
+  ggplot2::qplot(data = toPlot$plotData, month, skill) +
     scale_x_continuous(breaks = 1:12, labels = locale()$date_names$mon[1:12]) +
     scale_y_continuous(
-      breaks = seq(0, 10^4, seqBy)
+      breaks = seq(0, 10^6, toPlot$seqBy)
     ) +
     geom_smooth(level = 0.1) +
     xlab("Months") +
     ylab("Number of skill occurrences") +
     theme(panel.grid.minor = element_blank())
 })
-  # toPlot <- sumTab %>%
-  #   filter(date %in% input$date[1]:input$date[2]) %>%
-  #   select(-date) %>%
-  #   group_by(month) %>%
-  #   summarise_all(sum)
-  # toPlot <- toPlot %>%
-  #   mutate(skill = (toPlot[input$skills] %>% unlist()))
-  # ggplot2::qplot(data = toPlot, month, skill)
 ```
 
 
 ```{r}
-
-
-```{r}
-######### nowy plot pod spodem
-```
-
-
-```{r}
-skillsGroupsDS <- read_csv("data/prog_tag_skills_table_names_DS.csv")
-
-for (i in seq_len(nrow(skillsGroupsDS))) {
-  skillsGroupsDS$skill_multip[i] <- ifelse(
-    skillsGroupsDS$skill_multip[i] == 1, skillsGroupsDS$df_full_n[i], NA
-  )
-  skillsGroupsDS$DS_skill[i] <- ifelse(
-    skillsGroupsDS$DS_skill[i] == 1, skillsGroupsDS$df_full_n[i], NA
-  )
-  skillsGroupsDS$Prog_skill[i] <- ifelse(
-    skillsGroupsDS$Prog_skill[i] == 1, skillsGroupsDS$df_full_n[i], NA
-  )
-  skillsGroupsDS$DB_skill[i] <- ifelse(
-    skillsGroupsDS$DB_skill[i] == 1, skillsGroupsDS$df_full_n[i], NA
-  )
-  skillsGroupsDS$Universal_skill[i] <- ifelse(
-    skillsGroupsDS$Universal_skill[i] == 1, skillsGroupsDS$df_full_n[i], NA
-  )
-}
-
-skillsGroupsDS <- skillsGroupsDS %>%
-  filter(df_full_n != "id") %>%
-  as.list() %>%
-  tail(4) %>%
-  lapply(function(x) {
-    x <- x %>%
-      na.omit() %>%
-      sort()
-    attributes(x) <- NULL
-    x
-  })
-
-sumTabDS <- read_csv("data/bigKWCountTabDS_dates.csv") %>% 
-          select(-id) 
-
- 
-# words2Cloud <- sumTab %>%
-#   select(
-#     -c(id, DS_skill, Prog_skill, DB_skill, Universal_skill, date, month)
-#   ) %>%
-#   colSums() %>%
-#   mapply(
-#     function(x, y) {
-#       rep(y, x)
-#     }, ., names(.)
-#   ) %>%
-#   unlist() %>%
-#   unname()
-
-words2CloudDS <- sumTabDS %>%
-  select(
-    -c(
-      date,
-      month,
-      year
-    )
-  ) %>%
-  colSums() %>%
-  as.data.frame() %>%
-  tibble::rownames_to_column() %>%
-  as_data_frame() %>%
-  setNames(c("words", "freq"))
-
 renderPlot({
-  toPlot <- sumTabDS %>%
-    mutate(skill = .[input$skills] %>% unlist()) %>%
-    filter(date %in% input$date[1]:input$date[2]) %>%
-    select(skill, month) %>%
-    group_by(month) %>%
-    summarise(skill = sum(skill))
-  skillSpan <- max(toPlot$skill) - min(toPlot$skill)
-  seqBy <- if (between(skillSpan, 0, 10)) {
-    1
-  } else if (between(skillSpan, 11, 50)) {
-    2
-  } else if (between(skillSpan, 51, 100)) {
-    5
-  } else if (between(skillSpan, 101, 1000)) {
-    10
-  } else {
-    100
-  }
-  ggplot2::qplot(data = toPlot, month, skill) +
+  toPlotDS <- preparePlot(stDS)
+  ggplot2::qplot(data = toPlotDS$plotData, month, skill) +
     scale_x_continuous(breaks = 1:12, labels = locale()$date_names$mon[1:12]) +
     scale_y_continuous(
-      breaks = seq(0, 10^4, seqBy)
+      breaks = seq(0, 10^6, toPlotDS$seqBy)
     ) +
     geom_smooth(level = 0.1) +
     xlab("Months") +
     ylab("Number of skill occurrences") +
     theme(panel.grid.minor = element_blank())
 })
-  # toPlot <- sumTab %>%
-  #   filter(date %in% input$date[1]:input$date[2]) %>%
-  #   select(-date) %>%
-  #   group_by(month) %>%
-  #   summarise_all(sum)
-  # toPlot <- toPlot %>%
-  #   mutate(skill = (toPlot[input$skills] %>% unlist()))
-  # ggplot2::qplot(data = toPlot, month, skill)
 ```
 
-
-
-## Word cloud plot
+## Word cloud plots
 
 Below we would like to present the word cloud plot for entire dataset. Keywords: Analytics_analysis and computer_science are omitted - they were too popular. The plot was created on the 'raw' data - without any other data manipulation than counting keywords.
 
 ```{r}
-
 library(wordcloud)
 
-w2c <- words2Cloud %>%
-  filter(words != "Analitics_analysis") %>%
-  filter(words != "Computer_science") %>%
-  mutate(words = words %>% tolower())
-wordcloud(
-  w2c$words,
-  w2c$freq,
-  c(3, .5),
-  max.words = 50,
-  random.order = FALSE,
-  colors = brewer.pal(8, "Dark2")
-)
+toCloud <- function(wordsFreqs) {
+  wordsFreqs <- wordsFreqs %>%
+    filter(!(words %in% c("Analitics_analysis", "Computer_science"))) %>%
+    mutate(words = words %>% tolower())
+  wordcloud(
+    wordsFreqs$words,
+    wordsFreqs$freq,
+    max.words = 50,
+    random.order = FALSE,
+    colors = brewer.pal(8, "Dark2")
+  )
+}
+
+toCloud(w2c)
+
 ```
 
 Another word cloud only for data scientists. The plot shows wordcloud for full dataset scored by the best RF. The additional columns (DS_skill, ...) were omitted - they occupied too much of the plot due to the high values which they contained. 
 
 ```{r}
-
-w2c <- words2CloudDS %>%
-  filter(words != "Analitics_analysis" & words != "Computer_science" & words != "DS_skill" & words != "Prog_skill" & words != "Universal_skill" &  words != "DB_skill") %>%
-  mutate(words = words %>% tolower())
-wordcloud(
-  w2c$words,
-  w2c$freq,
-  c(3, .5),
-  max.words = 50,
-  random.order = FALSE,
-  colors = brewer.pal(8, "Dark2")
-)
+toCloud(w2cDS)
 ```
 
 ## How does it decide?
@@ -905,8 +796,17 @@ Point 2. informed us how important was a given variable for the model, point 4. 
 
 ```{r}
 tabsetPanel(
-  tabPanel("Importance of variables for the best model", img(src = "plots/cvRF/bestRFVarImpPlot.png")),
-  tabPanel("Importance of variables vs their popularity - learning dataset", img(src = "plots/cvRF/importanceVsAppereance.png")),
-  tabPanel("Importance of variables vs their popularity - complete dataset", img(src = "plots/cvRF/importanceVsAppearanceBigDF.png"))
+  tabPanel(
+    "Importance of variables for the best model",
+    img(src = "plots/cvRF/bestRFVarImpPlot.png")
+  ),
+  tabPanel(
+    "Importance of variables vs their popularity - learning dataset",
+    img(src = "plots/cvRF/importanceVsAppereance.png")
+  ),
+  tabPanel(
+    "Importance of variables vs their popularity - complete dataset",
+    img(src = "plots/cvRF/importanceVsAppearanceBigDF.png")
+  )
 )
 ```
