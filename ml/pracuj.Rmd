@@ -86,6 +86,85 @@ conMat <- function(tab) {
     )
   )
 }
+
+setGroups <- function(skillsGroups) {
+  for (i in seq_len(nrow(skillsGroups))) {
+    skillsGroups$skill_multip[i] <- ifelse(
+      skillsGroups$skill_multip[i] == 1, skillsGroups$df_full_n[i], NA
+    )
+    skillsGroups$DS_skill[i] <- ifelse(
+      skillsGroups$DS_skill[i] == 1, skillsGroups$df_full_n[i], NA
+    )
+    skillsGroups$Prog_skill[i] <- ifelse(
+      skillsGroups$Prog_skill[i] == 1, skillsGroups$df_full_n[i], NA
+    )
+    skillsGroups$DB_skill[i] <- ifelse(
+      skillsGroups$DB_skill[i] == 1, skillsGroups$df_full_n[i], NA
+    )
+    skillsGroups$Universal_skill[i] <- ifelse(
+      skillsGroups$Universal_skill[i] == 1, skillsGroups$df_full_n[i], NA
+    )
+  }
+  skillsGroups %>%
+  filter(df_full_n != "id") %>%
+  as.list() %>%
+  tail(4) %>%
+  lapply(function(x) {
+    x <- x %>%
+      na.omit() %>%
+      sort()
+    attributes(x) <- NULL
+    x
+  })
+}
+
+words2Cloud <- function(sumTab) {
+  sumTab %>%
+    select(-c(date, month, year)) %>%
+    colSums() %>%
+    as.data.frame() %>%
+    tibble::rownames_to_column() %>%
+    as_data_frame() %>%
+    setNames(c("words", "freq"))
+}
+
+preparePlot <- function(toPlot) {
+  plotData <- toPlot %>%
+    mutate(skill = .[input$skills] %>% unlist()) %>%
+    filter(date %in% input$date[1]:input$date[2]) %>%
+    select(skill, month) %>%
+    group_by(month) %>%
+    summarise(skill = sum(skill))
+  skillSpan <- max(plotData$skill) - min(plotData$skill)
+  seqBy <- if (between(skillSpan, 0, 10)) {
+    1
+  } else if (between(skillSpan, 11, 50)) {
+    2
+  } else if (between(skillSpan, 51, 100)) {
+    5
+  } else if (between(skillSpan, 101, 1000)) {
+    10
+  } else if (between(skillSpan, 101, 1000)) {
+    100
+  } else {
+    500
+  }
+  list(plotData, seqBy) %>%
+    setNames(c("plotData", "seqBy"))
+}
+
+toCloud <- function(wordsFreqs) {
+  wordsFreqs <- wordsFreqs %>%
+    filter(!(words %in% c("Analitics_analysis", "Computer_science"))) %>%
+    mutate(words = words %>% tolower())
+  wordcloud(
+    wordsFreqs$words,
+    wordsFreqs$freq,
+    max.words = 50,
+    random.order = FALSE,
+    colors = brewer.pal(8, "Dark2")
+  )
+}
 ```
 
 # Introduction
@@ -304,10 +383,6 @@ The first assumption made was not as obvious as it would seem, however we decide
 3.  case 3. - entire dataset with counting keywords per offer, with no extra columns
 4.  case 4. - entire dataset with counting keywords per offer, with extra columns
 
-<!-- As shown on the plots below the assumption works fine for RF and GLM. XGBoost however behaves differently (f.e. it outperforms GLM with crossvalidation applied and is worse than GLM when it's up to average/combined ROCs) and it was not clear for us why this phenomenom occurs. -->
-
-<!-- (plots) -->
-
 #### There and ... never back again
 
 After described assumptions were made we were ready to try some machine learning on our dataset. First wasn't a spectacular success. On the contrary - it went rather bad. The average/combined ROCs from the first ML attempt are shown on the plot below.
@@ -349,28 +424,6 @@ Below are ROCs and Variable Importance Plots for 20 most important variables (fi
 ##### dbAll
 
 ![](eachTraining/dbAll/plots/portraitROCzoom.png)
-
-
-```{r, echo = FALSE}
-# selectInput(
-#   "cDP_VIP", "Method:", c("GLM", "RF", "XGB"), ""
-# )
-# 
-# renderImage(
-#   list(
-#     src = switch(
-#       input$cDP_VIP,
-#       GLM = "eachTraining/dbAll/plots/portraitVIPGLM.png",
-#       RF = "eachTraining/dbAll/plots/portraitVIPRF.png",
-#       XGB = "eachTraining/dbAll/plots/portraitVIPXGB.png"
-#     )
-#   ),
-#   deleteFile = FALSE,
-#   outputArgs = list(
-#     height = "50%"
-#   )
-# )
-```
 
 ```{r}
 tabsetPanel(
@@ -509,7 +562,6 @@ For now the best model was obtained by repeated cross validation for Random Fore
 ```{r}
 tab <- get(load("crossValidation/dbAll/data/tabAll.Rda"))
 
-
 data_frame(
   c(
     "GLM",
@@ -568,16 +620,14 @@ Presented plots clearly indicate that our data manipulation (not all the way for
 Below we would like to present the parameters of optimal cutpoint calculated for the best model:
 
 ```{r}
-
 data.frame(
-            c("Best RF model"), 
-            c(0.119),
-            c(1.935),
-            c(0.993)
-           ) %>%
+  c("Best RF model"),
+  c(0.119),
+  c(1.935),
+  c(0.993)
+) %>%
   setNames(c("Method", "OC - Youden", "TPR + TNR Youden", "AUC")) %>%
   kable()
-
 
 tab$RF$Youden$values$TP <- 406 - 19
 tab$RF$Youden$values$FP <- 289
@@ -596,72 +646,6 @@ In this chapter we would like to briefly present obtained results. We thought it
 First of all the reader may use shiny app below to investigate how popular was selected phrase during the selected time period. Upper plot shows skill popularity vs time for entire filtered dataset. The plot below shows skills popularity vs time only for data scientist (tagged by the best RF). There was inconsistency between those two datasets (full dataset and dataset only with data scientists) - the different number of columns. The model was trained on smaller dataset and sometimes the keyword found in large set of data was not found in training data. That is why the reader may see error while chooseing certain skill name (like torch7 or scikit_learn). We were aware of this problem but wanted to show all found skills without multiplying plots.  We leave those plots for a reader to analyse.
 
 ```{r}
-setGroups <- function(skillsGroups) {
-  for (i in seq_len(nrow(skillsGroups))) {
-    skillsGroups$skill_multip[i] <- ifelse(
-      skillsGroups$skill_multip[i] == 1, skillsGroups$df_full_n[i], NA
-    )
-    skillsGroups$DS_skill[i] <- ifelse(
-      skillsGroups$DS_skill[i] == 1, skillsGroups$df_full_n[i], NA
-    )
-    skillsGroups$Prog_skill[i] <- ifelse(
-      skillsGroups$Prog_skill[i] == 1, skillsGroups$df_full_n[i], NA
-    )
-    skillsGroups$DB_skill[i] <- ifelse(
-      skillsGroups$DB_skill[i] == 1, skillsGroups$df_full_n[i], NA
-    )
-    skillsGroups$Universal_skill[i] <- ifelse(
-      skillsGroups$Universal_skill[i] == 1, skillsGroups$df_full_n[i], NA
-    )
-  }
-  skillsGroups %>%
-  filter(df_full_n != "id") %>%
-  as.list() %>%
-  tail(4) %>%
-  lapply(function(x) {
-    x <- x %>%
-      na.omit() %>%
-      sort()
-    attributes(x) <- NULL
-    x
-  })
-}
-
-words2Cloud <- function(sumTab) {
-  sumTab %>%
-    select(-c(date, month, year)) %>%
-    colSums() %>%
-    as.data.frame() %>%
-    tibble::rownames_to_column() %>%
-    as_data_frame() %>%
-    setNames(c("words", "freq"))
-}
-
-preparePlot <- function(toPlot) {
-  plotData <- toPlot %>%
-    mutate(skill = .[input$skills] %>% unlist()) %>%
-    filter(date %in% input$date[1]:input$date[2]) %>%
-    select(skill, month) %>%
-    group_by(month) %>%
-    summarise(skill = sum(skill))
-  skillSpan <- max(plotData$skill) - min(plotData$skill)
-  seqBy <- if (between(skillSpan, 0, 10)) {
-    1
-  } else if (between(skillSpan, 11, 50)) {
-    2
-  } else if (between(skillSpan, 51, 100)) {
-    5
-  } else if (between(skillSpan, 101, 1000)) {
-    10
-  } else if (between(skillSpan, 101, 1000)) {
-    100
-  } else {
-    500
-  }
-  list(plotData, seqBy) %>%
-    setNames(c("plotData", "seqBy"))
-}
-
 sg <- read_csv("data/prog_tag_skills_table_names.csv") %>%
   setGroups()
 st <- read_csv("data/bigKWCountTab_dates.csv") %>%
@@ -750,26 +734,12 @@ renderPlot({
 
 ## Word cloud plots
 
-Below we would like to present the word cloud plot for entire dataset. Keywords: Analytics_analysis and computer_science are omitted - they were too popular. The plot was created on the 'raw' data - without any other data manipulation than counting keywords.
+Below we would like to present the word cloud plot for entire dataset. Keywords: Analytics\_analysis and computer\_science are omitted - they were too popular. The plot was created on the 'raw' data - without any other data manipulation than counting keywords.
 
 ```{r}
 library(wordcloud)
 
-toCloud <- function(wordsFreqs) {
-  wordsFreqs <- wordsFreqs %>%
-    filter(!(words %in% c("Analitics_analysis", "Computer_science"))) %>%
-    mutate(words = words %>% tolower())
-  wordcloud(
-    wordsFreqs$words,
-    wordsFreqs$freq,
-    max.words = 50,
-    random.order = FALSE,
-    colors = brewer.pal(8, "Dark2")
-  )
-}
-
 toCloud(w2c)
-
 ```
 
 Another word cloud only for data scientists. The plot shows wordcloud for full dataset scored by the best RF. The additional columns (DS_skill, ...) were omitted - they occupied too much of the plot due to the high values which they contained. 
