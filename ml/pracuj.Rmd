@@ -324,23 +324,25 @@ The second phase utilised new data. The new ROCs obtained after new machine lear
   
 The new dataframe was then used in the phase 3 of our machine learning activities.
 
-The ROCs from the third phase are ploted below. At this point it was clear that Random Forest method outperformed every other method we tried and would be selected for crossvalidation. The crossvalidation will be discussed in the paragraph below.
+The average ROCs from the third phase are ploted below. At this point it was clear that Random Forest method outperformed every other method we tried and would be selected for crossvalidation. The crossvalidation will be discussed in the paragraph below.
+
+![](plots/averageComparison/RFvsGLM/xtraCols_KWCount.png)
 
 #### Caret package – training the best of them all
 
-Once we determined which method will suit our purpose best it was time to look for the best possible Random Forest around. We used training with cross validation available in caret package (trainControl() and train() functions to be specific). We used 3 rounds and 10 folds which explicitly means that main dataset was divided into 10 subsets, on each subset one model was trained in three different ways – with small amount of variables to be considered for each tree split, medium and large. This procedure was repeated 3 times (for each subset) and the model with the lowest average error was chosen as the best one. To sum things up there were 10 subsets, 3 models were trained for each subset (f.e. once with 2 variables to choose from per each tree split, once with 72 variables per split and once with 150) and this 10 * 3 procedure was repeated 3 times. The ROC for the best RF is shown below.
+Once we determined which method will suit our purpose best it was time to look for the best possible Random Forest around. We used training with cross validation available in caret package (trainControl() and train() functions to be specific). We used 3 rounds and 10 folds which explicitly means that main dataset was divided into 10 subsets, on each subset one model was trained in three different ways – with small amount of variables to be considered for each tree split, medium and large. This procedure was repeated 3 times (for each subset) and the model with the lowest average error was chosen as the best one. To sum things up there were 10 subsets, 3 models were trained for each subset (f.e. once with 2 variables to choose from per each tree split, once with 72 variables per split and once with 150) and this 10 * 3 procedure was repeated 3 times.
 
 ### Detailed description of data manipulation and model training activities
 
 #### Database grouping
 
-Data Scientist constantly have to work with different kinds od databases. There are over 300 of them included in ranking at [db-engines site](http://db-engines.com/en/ranking). The data consistent of database name, type and score was scraped from that source. For practical reasons, all of the unpopular systems (with score below 1 - almost 2/3 of them) were discarded. There were 3 rounds of teaching models depandant on databases grouping:
+Data Scientist constantly have to work with different kinds od databases. There are over 300 of them included in ranking at [db-engines site](http://db-engines.com/en/ranking). The data consistent of database name, type and score was scraped from that source. For practical reasons, all of the unpopular systems (with score below 1 - almost 2/3 of them) were discarded. There were 3 rounds of teaching models dependent of database grouping:
 
 1. **dbAll** - all databases have their unique column (f.e. PostgreSQL, Redis, MongoDB, Neo4j, Cassandra)
 2. **dbTypes** - all databases occurrences are represented in their corresponding groups (f.e. Relational, Key-value, Document, Graph, Wide column)
 3. **dbBinary** - groups are further boiled down to two columns - Relational and NoSQL
 
-The point of such opration was to find out if the models performances would be better and if maybe unsignificant for training process variables would be more important combined.
+The point of such operation was to find out if the models' performances would increase and if maybe unsignificant for training process variables would be more important combined.
 
 Below are ROCs and Variable Importance Plots for 20 most important variables (filtered by their median), showing their stability.
 
@@ -350,24 +352,24 @@ Below are ROCs and Variable Importance Plots for 20 most important variables (fi
 
 
 ```{r, echo = FALSE}
-selectInput(
-  "cDP_VIP", "Method:", c("GLM", "RF", "XGB"), ""
-)
-
-renderImage(
-  list(
-    src = switch(
-      input$cDP_VIP,
-      GLM = "eachTraining/dbAll/plots/portraitVIPGLM.png",
-      RF = "eachTraining/dbAll/plots/portraitVIPRF.png",
-      XGB = "eachTraining/dbAll/plots/portraitVIPXGB.png"
-    )
-  ),
-  deleteFile = FALSE,
-  outputArgs = list(
-    height = "50%"
-  )
-)
+# selectInput(
+#   "cDP_VIP", "Method:", c("GLM", "RF", "XGB"), ""
+# )
+# 
+# renderImage(
+#   list(
+#     src = switch(
+#       input$cDP_VIP,
+#       GLM = "eachTraining/dbAll/plots/portraitVIPGLM.png",
+#       RF = "eachTraining/dbAll/plots/portraitVIPRF.png",
+#       XGB = "eachTraining/dbAll/plots/portraitVIPXGB.png"
+#     )
+#   ),
+#   deleteFile = FALSE,
+#   outputArgs = list(
+#     height = "50%"
+#   )
+# )
 ```
 
 ```{r}
@@ -402,7 +404,7 @@ tabsetPanel(
 )
 ```
 
-One can see that neither any of groups nor one of two columns appeared on VIPs. Furthermore, always the best output was achieved by the Random Forest method.
+One can see that there isn't any group nor one of two columns on VIPs. Furthermore, always the best output was achieved by the Random Forest method.
 
 ##### Combinded
 
@@ -416,15 +418,13 @@ tabsetPanel(
 
 One can observe that performances are almost identical for each database grouping and that always the best option (by a tiny bit for XGB) was to keep all databases in their separate columns.
 
-### Counting keywords/key phrases and counting/categorizing specific skills
-
 #### Counting keywords/key phrases
 
-As mentioned above, in order to improve models' performance we decided to count how many times each keyword would appear in a given offer instead of simply indicating with '0' or '1' if the keyword was present in the job description or not. This trick noteably increased all models' performance. Results are shown on the ROC plots. This procedure was also described in other paragraph of this paper (for more detailed description go to paragraph 3.2.3.4 - Data post-processing).
+As mentioned above, in order to improve models' performance we decided to count how many times each keyword would appear in a given offer instead of simply indicating with '0' or '1' if the keyword was present in the job description or not. This trick noteably increased all models' performance. Results are shown on the ROC plots. (for more detailed description please go to paragraph 3.2.3.4 - Data post-processing).
 
 #### Counting specific skills
 
-In one of the attempts to increase the models' performace we decided to create 4 new columns in which we would sum Data Science, Programming, Database and Universal skills. We arbitraly decided which of the keywords are indicating on Data Science, Programming, Database or Universal skills - our skill classification is shown in the table below. After the skill classification was ready we simply summarised every type of skill per offer (f.e. if R was found 3 times, Google Analytics once, and MS Access was found 2 times in one offer DS\_skill column for that offer would equal to 4 and DB\_skill would equal to 2).
+In one of the attempts to increase the models' performace we decided to create 4 new columns in which we would sum Data Science, Programming, Database and Universal skills. We arbitraly decided which of the keywords are from Data Science, Programming, Database or Universal skills branch - our skill classification can be found here (link). After the skill classification was ready we simply summarised every type of skill per offer (f.e. if R was found 3 times, Google Analytics once, and MS Access was found 2 times in one offer DS\_skill column for that offer would equal to 4 and DB\_skill would equal to 2).
 
 #### Results of two later data manipulation activities
 
@@ -445,7 +445,7 @@ tabsetPanel(
 ```
 
 One may observe that Random Forest's AUC (as well as other accuracy measures) was always increased by data manipulations.
-The case with GLM was slightly different. Despite the fact that counting keywords helped to increase AUC the extra columns always ruined the model. (komentarz od rozkładach zmiennych ? )
+The case with GLM was slightly different. Despite the fact that counting keywords helped to increase AUC the extra columns always ruined the model.
 
 We would also like to show that Random Forest was always closer to the (1,0) point of the ROC plot with following plots created for every data manipulation step:
 
@@ -458,7 +458,7 @@ tabsetPanel(
 )
 ```
 
-The domination of Random Forest is undeniable. One may ask "Well, well, but how about the XGBoost's performance?" of course. As mentioned above we decided not to "average" XGBoost's performance due to the specifity of xgb.cv()) method. This method allows one to quickly tweak training parameters in order to obtain the best possible XGBoost model for a given dataset. We decided it would be pointless to compare "averaged" methods against the crossvalidated one and therefore we ruled XGBoost out of "averaged" comparison.
+The domination of Random Forest is undeniable. One may ask "Well, well, but what about the XGBoost's performance?" of course. In the end we decided not to "average" XGBoost's performance due to the specifity of xgb.cv()) method. This method allows one to quickly tweak training parameters in order to obtain the best possible XGBoost model for a given dataset. We decided it would be pointless to compare "averaged" methods against the crossvalidated one and therefore we ruled XGBoost out of "averaged" comparison.
 
 In order to check the variables importance stability the following boxplots were created (Random Forest's variable stability is ploted for case 4. dataset, however GLM's variable stability was ploted for case 3. dataset).
 
@@ -471,9 +471,9 @@ tabsetPanel(
 ```
 
 
-#### Repeated cross validation
+#### Initial repeated cross validation for case 1. dataset
 
-Knowing the best data form we tried to achieve better results by repeated cross validation from caret package. This library does not support XGBoost objects - but as previously mentioned - XGBoost was created for cross validation from the beginning.
+After "averaged" models comparison was complete we decided to see if there would be any way to increase model's performance. Having the best dataset structure ready we tried to achieve better results by repeated cross validation from caret package. This library does not support XGBoost objects - but as previously mentioned - XGBoost was created for cross validation from the beginning.
 
 ![](crossValidation/dbAll/plots/portraitROCzoom.png)
 
@@ -489,33 +489,6 @@ tabsetPanel(
 )
 ```
 
-In order to be certain that our assumptions were correct we decided to perform crossvalidation for the following datasets:
-
--  case 1. - entire 0-1 dataset (without counting the keywords) with no extra columns
--  case 2. - entire 0-1 dataset with extra columns
--  case 3. - entire dataset with counting keywords per offer, with no extra columns
--  case 4. - entire dataset with counting keywords per offer, with extra columns
-
-We compared models against each other (RF vs GLM vs XGB):
-
-```{r}
-tabsetPanel(
-  tabPanel("case 1.", img(src = "plots/cvAll/rawCols_01.png")),
-  tabPanel("case 2.", img(src = "plots/cvAll/xtraCols_01.png")),
-  tabPanel("case 4.", img(src = "plots/cvAll/xtraCols_KWCount.png"))
-)
-```
-
-As well as against themselves trained of different sets of data (RF(case 1. dataset) vs RF(case 2. dataset) vs RF(case 3. dataset) vs RF(case 4. dataset)):
-
-```{r}
-tabsetPanel(
-  tabPanel("GLM", img(src = "plots/cvGLM/bestGLMComparison.png")),
-  tabPanel("RF", img(src = "plots/cvRF/bestRFsComparison.png")),
-  tabPanel("XGB", img(src = "plots/cvXGB/bestXGBComparison.png"))
-)
-```
-Presented plots clearly indicate that our data manipulation (not all the way for GLM - for this method the case 3. dataset turned out to be the best one) went in rather good direction and enhanced trained models. We decided that the best Random Forest model would be utilised for scoring the downloaded offers. The "mpar" was equal to 76 (0,5 * numberOfVariables) for the best RF. The variable importance for the best Random Forest will be shown as a part of "Analysis" paragraph of this paper.
 
 Below are optimal cutpoints and areas under curves for cross validated models:
 
@@ -562,6 +535,36 @@ conMat(tab)
 
 It is highly probable that the most of those 271 False Positives are actual Data Science offers that we did not tag as positive due to time shortage and human error.
 
+#### Final repeated cross validation for all datasets
+
+In order to find the best model and be certain that assumptions made earlier were correct we decided to perform crossvalidation for the following datasets:
+
+-  case 1. - entire 0-1 dataset (without counting the keywords) with no extra columns
+-  case 2. - entire 0-1 dataset with extra columns
+-  case 3. - entire dataset with counting keywords per offer, with no extra columns
+-  case 4. - entire dataset with counting keywords per offer, with extra columns
+
+We compared models against each other (RF vs GLM vs XGB):
+
+```{r}
+tabsetPanel(
+  tabPanel("case 1.", img(src = "plots/cvAll/rawCols_01.png")),
+  tabPanel("case 2.", img(src = "plots/cvAll/xtraCols_01.png")),
+  tabPanel("case 4.", img(src = "plots/cvAll/xtraCols_KWCount.png"))
+)
+```
+
+As well as against themselves trained of different sets of data (RF(case 1. dataset) vs RF(case 2. dataset) vs RF(case 3. dataset) vs RF(case 4. dataset)):
+
+```{r}
+tabsetPanel(
+  tabPanel("GLM", img(src = "plots/cvGLM/bestGLMComparison.png")),
+  tabPanel("RF", img(src = "plots/cvRF/bestRFsComparison.png")),
+  tabPanel("XGB", img(src = "plots/cvXGB/bestXGBComparison.png"))
+)
+```
+Presented plots clearly indicate that our data manipulation (not all the way for GLM - for this method the case 3. dataset turned out to be the best one) went in rather good direction and enhanced trained models. We decided that the best Random Forest model would be utilised for scoring the downloaded offers. The "mpar" was equal to 76 (0,5 * numberOfVariables) for the best RF. The variable importance for the best Random Forest will be shown as a part of "Analysis" paragraph of this paper.
+
 Below we would like to present the parameters of optimal cutpoint calculated for the best model:
 
 ```{r}
@@ -586,11 +589,11 @@ conMat(tab)
 
 # Analysis
 
-First things first - unfortunately first two presented plots were created for unscored dataset, i.e. for entire job offers database. We did not manage to clean entire dataset before finishing that document and therefore we did not score it with our best model yet and that simply means the analysis was not performed with the distinction if the offer was/was not from data science market. We will perform scoring as soon as the big dataset is clear and update this paper.
+In this chapter we would like to briefly present obtained results. We thought it would be the best to show results on intuitive plots for the reader to draw conclusions oneself.
 
 ## Demand for given skills throughout the given time period
 
-Now let us briefly describe presented plots. First of all the reader may use shiny app below to investigate how popular was selected phrase during the period in which we archived offers. We leave those plots for a reader to analyse.
+First of all the reader may use shiny app below to investigate how popular was selected phrase during the selected time period. Upper plot shows skill popularity vs time for entire filtered dataset. The plot below shows skills popularity vs time only for data scientist (tagged by the best RF). There was inconsistency between those two datasets (full dataset and dataset only with data scientists) - the different number of columns. The model was trained on smaller dataset and sometimes the keyword found in large set of data was not found in training data. That is why the reader may see error while chooseing certain skill name (like torch7 or scikit_learn). We were aware of this problem but wanted to show all found skills without multiplying plots.  We leave those plots for a reader to analyse.
 
 ```{r}
 skillsGroups <- read_csv("data/prog_tag_skills_table_names.csv")
@@ -619,13 +622,14 @@ skillsGroups <- skillsGroups %>%
   tail(4) %>%
   lapply(function(x) {
     x <- x %>%
-      na.omit()
+      na.omit() %>%
+      sort()
     attributes(x) <- NULL
     x
   })
 
 sumTab <- read_csv("data/bigKWCountTab_dates.csv") %>% 
-          select(-id)
+          select(-id) 
 
  
 # words2Cloud <- sumTab %>%
@@ -730,9 +734,123 @@ renderPlot({
   # ggplot2::qplot(data = toPlot, month, skill)
 ```
 
+
+```{r}
+
+
+```{r}
+######### nowy plot pod spodem
+```
+
+
+```{r}
+skillsGroupsDS <- read_csv("data/prog_tag_skills_table_names_DS.csv")
+
+for (i in seq_len(nrow(skillsGroupsDS))) {
+  skillsGroupsDS$skill_multip[i] <- ifelse(
+    skillsGroupsDS$skill_multip[i] == 1, skillsGroupsDS$df_full_n[i], NA
+  )
+  skillsGroupsDS$DS_skill[i] <- ifelse(
+    skillsGroupsDS$DS_skill[i] == 1, skillsGroupsDS$df_full_n[i], NA
+  )
+  skillsGroupsDS$Prog_skill[i] <- ifelse(
+    skillsGroupsDS$Prog_skill[i] == 1, skillsGroupsDS$df_full_n[i], NA
+  )
+  skillsGroupsDS$DB_skill[i] <- ifelse(
+    skillsGroupsDS$DB_skill[i] == 1, skillsGroupsDS$df_full_n[i], NA
+  )
+  skillsGroupsDS$Universal_skill[i] <- ifelse(
+    skillsGroupsDS$Universal_skill[i] == 1, skillsGroupsDS$df_full_n[i], NA
+  )
+}
+
+skillsGroupsDS <- skillsGroupsDS %>%
+  filter(df_full_n != "id") %>%
+  as.list() %>%
+  tail(4) %>%
+  lapply(function(x) {
+    x <- x %>%
+      na.omit() %>%
+      sort()
+    attributes(x) <- NULL
+    x
+  })
+
+sumTabDS <- read_csv("data/bigKWCountTabDS_dates.csv") %>% 
+          select(-id) 
+
+ 
+# words2Cloud <- sumTab %>%
+#   select(
+#     -c(id, DS_skill, Prog_skill, DB_skill, Universal_skill, date, month)
+#   ) %>%
+#   colSums() %>%
+#   mapply(
+#     function(x, y) {
+#       rep(y, x)
+#     }, ., names(.)
+#   ) %>%
+#   unlist() %>%
+#   unname()
+
+words2CloudDS <- sumTabDS %>%
+  select(
+    -c(
+      date,
+      month,
+      year
+    )
+  ) %>%
+  colSums() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  as_data_frame() %>%
+  setNames(c("words", "freq"))
+
+renderPlot({
+  toPlot <- sumTabDS %>%
+    mutate(skill = .[input$skills] %>% unlist()) %>%
+    filter(date %in% input$date[1]:input$date[2]) %>%
+    select(skill, month) %>%
+    group_by(month) %>%
+    summarise(skill = sum(skill))
+  skillSpan <- max(toPlot$skill) - min(toPlot$skill)
+  seqBy <- if (between(skillSpan, 0, 10)) {
+    1
+  } else if (between(skillSpan, 11, 50)) {
+    2
+  } else if (between(skillSpan, 51, 100)) {
+    5
+  } else if (between(skillSpan, 101, 1000)) {
+    10
+  } else {
+    100
+  }
+  ggplot2::qplot(data = toPlot, month, skill) +
+    scale_x_continuous(breaks = 1:12, labels = locale()$date_names$mon[1:12]) +
+    scale_y_continuous(
+      breaks = seq(0, 10^4, seqBy)
+    ) +
+    geom_smooth(level = 0.1) +
+    xlab("Months") +
+    ylab("Number of skill occurrences") +
+    theme(panel.grid.minor = element_blank())
+})
+  # toPlot <- sumTab %>%
+  #   filter(date %in% input$date[1]:input$date[2]) %>%
+  #   select(-date) %>%
+  #   group_by(month) %>%
+  #   summarise_all(sum)
+  # toPlot <- toPlot %>%
+  #   mutate(skill = (toPlot[input$skills] %>% unlist()))
+  # ggplot2::qplot(data = toPlot, month, skill)
+```
+
+
+
 ## Word cloud plot
 
-Below we would like to present the word cloud plot for entire dataset.
+Below we would like to present the word cloud plot for entire dataset. Keywords: Analytics_analysis and computer_science are omitted - they were too popular. The plot was created on the 'raw' data - without any other data manipulation than counting keywords.
 
 ```{r}
 
@@ -741,6 +859,23 @@ library(wordcloud)
 w2c <- words2Cloud %>%
   filter(words != "Analitics_analysis") %>%
   filter(words != "Computer_science") %>%
+  mutate(words = words %>% tolower())
+wordcloud(
+  w2c$words,
+  w2c$freq,
+  c(3, .5),
+  max.words = 50,
+  random.order = FALSE,
+  colors = brewer.pal(8, "Dark2")
+)
+```
+
+Another word cloud only for data scientists. The plot shows wordcloud for full dataset scored by the best RF. The additional columns (DS_skill, ...) were omitted - they occupied too much of the plot due to the high values which they contained. 
+
+```{r}
+
+w2c <- words2CloudDS %>%
+  filter(words != "Analitics_analysis" & words != "Computer_science" & words != "DS_skill" & words != "Prog_skill" & words != "Universal_skill" &  words != "DB_skill") %>%
   mutate(words = words %>% tolower())
 wordcloud(
   w2c$words,
@@ -771,6 +906,7 @@ Point 2. informed us how important was a given variable for the model, point 4. 
 ```{r}
 tabsetPanel(
   tabPanel("Importance of variables for the best model", img(src = "plots/cvRF/bestRFVarImpPlot.png")),
-  tabPanel("Importance of variables vs their popularity", img(src = "plots/cvRF/importanceVsAppereance.png"))
+  tabPanel("Importance of variables vs their popularity - learning dataset", img(src = "plots/cvRF/importanceVsAppereance.png")),
+  tabPanel("Importance of variables vs their popularity - complete dataset", img(src = "plots/cvRF/importanceVsAppearanceBigDF.png"))
 )
 ```
