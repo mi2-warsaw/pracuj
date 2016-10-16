@@ -777,6 +777,10 @@ tabsetPanel(
   tabPanel(
     "Importance of variables vs their popularity - complete dataset",
     img(src = "plots/cvRF/importanceVsAppearanceBigDF.png")
+  ),
+  tabPanel(
+    "Importance of variables vs their popularity - complete dataset (additional columns omited)",
+    img(src = "plots/cvRF/varImpVSKWCountDS_OK.png")
   )
 )
 ```
