@@ -103,6 +103,7 @@ getCategories <- function(scriptNodes, funPhrase) {
 # Check which offers are already in DB
 isIDinDB <- function(hrefVect) {
   hrefVect %>%
+    unique() %>%
     data_frame() %>%
     setNames("href") %>%
     mutate(
