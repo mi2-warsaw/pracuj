@@ -200,7 +200,7 @@ In order to analyse the data we had to download it first. Therefore we developed
 data_frame(
   dbname = "pracuj",
   user = "reader",
-  password = "qux94874",
+  password = "--here--is--the--password--",
   host = "services.mini.pw.edu.pl"
 ) %>%
   kable()
