@@ -167,12 +167,19 @@ toCloud <- function(wordsFreqs) {
 }
 ```
 
-# Introduction
-Usually academic teaching programme lags behind the real world requirements - we have learned that this time-gap could be as big as two years. In order to remedy this quite excessive time lag [prof. Przemysław Biecek](http://biecek.pl/) from MiNI (faculty of Mathematics and Informational Studies) at Warsaw University of Technology decided to assign us (interns at MI2 group) a task – extract and identify skills needed by data science industry in order to align teaching with the current needs.
+# The Introduction
 
-# Masterplan
+What are the top ten skills that employers want?
 
-Although the idea may appear as a simple task - it wasn't. We would have never made it if not for the professor's general idea about how things should be done. The main concept was to download a lot of job offers, decide if offer “is/is not data scientist” and tag it, train machine learning model on downloaded data, predict if fresh/“unseen” by the model offer is from the DS industry or not and extract most popular/needed skills from all DS offers. The plan can be summarised as follows:
+The academic teaching programmes are not always close to expectations of employers. It's even hard to find data grounded summaries what is currently on demand. 
+So we, [interns at MI2 group](http://github.com/mi2-warsaw), decided to take care about this problem. Together with [Przemysław Biecek, prof PW](http://biecek.pl/) from MiNI [Faculty of Mathematics and Informational Studies](http://mini.pw.edu.pl) at Warsaw University of Technology we decided to extract and identify skills needed by data science industry in order to align teaching and learning with the current needs of job market.
+
+# The Masterplan
+
+Although the idea may appear as a simple task - it wasn't. 
+The main concept was to download a lot of job offers, decide if offer ''is/is not an offer for a data scientist'' and tag it. Having these labels we can then train a machine learning model on the downloaded data. Having the model we can predict for all new/future/ fresh/unseen offers if this offer is from the DS industry or not. Having offerst for Data Scientists we can then extract the most popular/needed skills from all DS offers. 
+
+So, the plan can be summarised as follows:
 
 1. Pick the website with job offers (he chose [pracuj.pl](http://www.pracuj.pl/)) and acquire needed data:
     + either by asking politely website's administration
@@ -184,7 +191,7 @@ Although the idea may appear as a simple task - it wasn't. We would have never m
 
 We had to choose the way of data-scraping because we had no response for our data requests.
 
-# Execution
+# The Execution
 
 ## Scraping
 
