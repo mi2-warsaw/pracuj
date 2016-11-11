@@ -177,7 +177,7 @@ So we, [interns at MI2 group](http://github.com/mi2-warsaw), decided to take car
 # The Masterplan
 
 Although the idea may appear as a simple task - it wasn't. 
-The main concept was to download a lot of job offers, decide if offer ''is/is not an offer for a data scientist'' and tag it. Having these labels we can then train a machine learning model on the downloaded data. Having the model we can predict for all new/future/ fresh/unseen offers if this offer is from the DS industry or not. Having offerst for Data Scientists we can then extract the most popular/needed skills from all DS offers. 
+The main concept was to download a lot of job offers, decide if offer ''is/is not an offer for a data scientist'' and tag it. Having these labels we could then train a machine learning model on the downloaded data. Having the model we could predict for all new/future/ fresh/unseen offers if this offer is from the DS industry or not. Having offerst for Data Scientists we could then extract the most popular/needed skills from all DS offers. 
 
 So, the plan can be summarised as follows:
 
@@ -432,49 +432,35 @@ Below are ROCs and Variable Importance Plots for 20 most important variables (fi
 
 ![](eachTraining/dbAll/plots/portraitROCzoom.png)
 
-```{r}
-tabsetPanel(
-  tabPanel("GLM", img(src = "eachTraining/dbAll/plots/portraitVIPGLM.png")),
-  tabPanel("RF", img(src = "eachTraining/dbAll/plots/portraitVIPRF.png")),
-  tabPanel("XGB", img(src = "eachTraining/dbAll/plots/portraitVIPXGB.png"))
-)
-```
+![](eachTraining/dbAll/plots/portraitVIPGLM.png)
+![](eachTraining/dbAll/plots/portraitVIPRF.png)
+![](eachTraining/dbAll/plots/portraitVIPXGB.png)
+
 
 ##### dbTypes
 
 ![](eachTraining/dbTypes/plots/portraitROCzoom.png)
 
-```{r}
-tabsetPanel(
-  tabPanel("GLM", img(src = "eachTraining/dbTypes/plots/portraitVIPGLM.png")),
-  tabPanel("RF", img(src = "eachTraining/dbTypes/plots/portraitVIPRF.png")),
-  tabPanel("XGB", img(src = "eachTraining/dbTypes/plots/portraitVIPXGB.png"))
-)
-```
+![](eachTraining/dbTypes/plots/portraitVIPGLM.png)
+![](eachTraining/dbTypes/plots/portraitVIPRF.png)
+![](eachTraining/dbTypes/plots/portraitVIPXGB.png)
+
 
 ##### dbBinary
 
 ![](eachTraining/dbBinary/plots/portraitROCzoom.png)
 
-```{r}
-tabsetPanel(
-  tabPanel("GLM", img(src = "eachTraining/dbBinary/plots/portraitVIPGLM.png")),
-  tabPanel("RF", img(src = "eachTraining/dbBinary/plots/portraitVIPRF.png")),
-  tabPanel("XGB", img(src = "eachTraining/dbBinary/plots/portraitVIPXGB.png"))
-)
-```
+![](eachTraining/dbBinary/plots/portraitVIPGLM.png)
+![](eachTraining/dbBinary/plots/portraitVIPRF.png)
+![](eachTraining/dbBinary/plots/portraitVIPXGB.png)
 
 One can see that there isn't any group nor one of two columns on VIPs. Furthermore, always the best output was achieved by the Random Forest method.
 
 ##### Combinded
 
-```{r}
-tabsetPanel(
-  tabPanel("GLM", img(src = "eachTraining/plots/portraitROCGLMzoom.png")),
-  tabPanel("RF", img(src = "eachTraining/plots/portraitROCRFzoom.png")),
-  tabPanel("XGB", img(src = "eachTraining/plots/portraitROCXGBzoom.png"))
-)
-```
+![](eachTraining/plots/portraitROCGLMzoom.png)
+![](eachTraining/plots/portraitROCRFzoom.png)
+![](eachTraining/plots/portraitROCXGBzoom.png)
 
 One can observe that performances are almost identical for each database grouping and that always the best option (by a tiny bit for XGB) was to keep all databases in their separate columns.
 
@@ -497,39 +483,27 @@ First we would like to present the effect the described data manipulations (coun
 -  case 3. - entire dataset with counting keywords per offer, with no extra columns
 -  case 4. - entire dataset with counting keywords per offer, with extra columns
 
-```{r}
-tabsetPanel(
-  tabPanel("GLM", img(src = "plots/averageComparison/GLM/averageGLMComparison.png")),
-  tabPanel("RF", img(src = "plots/averageComparison/RF/averageRFComparison.png"))
-)
-```
+![](plots/averageComparison/GLM/averageGLMComparison.png)
+![](plots/averageComparison/RF/averageRFComparison.png)
+
 
 One may observe that Random Forest's AUC (as well as other accuracy measures) was always increased by data manipulations.
 The case with GLM was slightly different. Despite the fact that counting keywords helped to increase AUC the extra columns always ruined the model.
 
 We would also like to show that Random Forest was always closer to the (1,0) point of the ROC plot with following plots created for every data manipulation step:
 
-```{r}
-tabsetPanel(
-  tabPanel("case 1.", img(src = "plots/averageComparison/RFvsGLM/rawCols_01.png")),
-  tabPanel("case 2.", img(src = "plots/averageComparison/RFvsGLM/xtraCols_01.png")),
-  tabPanel("case 3.", img(src = "plots/averageComparison/RFvsGLM/rawCols_KWCount.png")),
-  tabPanel("case 4.", img(src = "plots/averageComparison/RFvsGLM/xtraCols_KWCount.png"))
-)
-```
+![](plots/averageComparison/RFvsGLM/rawCols_01.png)
+![](plots/averageComparison/RFvsGLM/xtraCols_01.png)
+![](plots/averageComparison/RFvsGLM/rawCols_KWCount.png)
+![](plots/averageComparison/RFvsGLM/xtraCols_KWCount.png)
 
 The domination of Random Forest is undeniable. One may ask "Well, well, but what about the XGBoost's performance?" of course. In the end we decided not to "average" XGBoost's performance due to the specifity of xgb.cv()) method. This method allows one to quickly tweak training parameters in order to obtain the best possible XGBoost model for a given dataset. We decided it would be pointless to compare "averaged" methods against the crossvalidated one and therefore we ruled XGBoost out of "averaged" comparison.
 
 In order to check the variables importance stability the following boxplots were created (Random Forest's variable stability is ploted for case 4. dataset, however GLM's variable stability was ploted for case 3. dataset).
 
 
-```{r}
-tabsetPanel(
-  tabPanel("GLM", img(src = "plots/averageComparison/GLM_varImpStab.png")),
-  tabPanel("RF", img(src = "plots/averageComparison/RF_varImpStab.png"))
-)
-```
-
+![](plots/averageComparison/GLM_varImpStab.png)
+![](plots/averageComparison/RF_varImpStab.png)
 
 #### Initial repeated cross validation for case 1. dataset
 
@@ -541,14 +515,10 @@ One can see that XGBoost now outperforms GLM but still is beaten by Random Fores
 
 Below are visualized differences for two different approaches - data split and repeated cross validation:
 
-```{r}
-tabsetPanel(
-  tabPanel("GLM", img(src = "plots/portraitROCGLMapproachzoom.png")),
-  tabPanel("RF", img(src = "plots/portraitROCRFapproachzoom.png")),
-  tabPanel("XGB", img(src = "plots/portraitROCXGBapproachzoom.png"))
-)
-```
 
+![](plots/portraitROCGLMapproachzoom.png)
+![](plots/portraitROCRFapproachzoom.png)
+![](plots/portraitROCXGBapproachzoom.png)
 
 Below are optimal cutpoints and areas under curves for cross validated models:
 
@@ -605,23 +575,17 @@ In order to find the best model and be certain that assumptions made earlier wer
 
 We compared models against each other (RF vs GLM vs XGB):
 
-```{r}
-tabsetPanel(
-  tabPanel("case 1.", img(src = "plots/cvAll/rawCols_01.png")),
-  tabPanel("case 2.", img(src = "plots/cvAll/xtraCols_01.png")),
-  tabPanel("case 4.", img(src = "plots/cvAll/xtraCols_KWCount.png"))
-)
-```
+![](plots/cvAll/rawCols_01.png)
+![](plots/cvAll/xtraCols_01.png)
+![](plots/cvAll/xtraCols_KWCount.png)
+
 
 As well as against themselves trained of different sets of data (RF(case 1. dataset) vs RF(case 2. dataset) vs RF(case 3. dataset) vs RF(case 4. dataset)):
 
-```{r}
-tabsetPanel(
-  tabPanel("GLM", img(src = "plots/cvGLM/bestGLMComparison.png")),
-  tabPanel("RF", img(src = "plots/cvRF/bestRFsComparison.png")),
-  tabPanel("XGB", img(src = "plots/cvXGB/bestXGBComparison.png"))
-)
-```
+![](plots/cvGLM/bestGLMComparison.png)
+![](plots/cvRF/bestRFsComparison.png)
+![](plots/cvXGB/bestXGBComparison.png)
+
 Presented plots clearly indicate that our data manipulation (not all the way for GLM - for this method the case 3. dataset turned out to be the best one) went in rather good direction and enhanced trained models. We decided that the best Random Forest model would be utilised for scoring the downloaded offers. The "mpar" was equal to 76 (0,5 * numberOfVariables) for the best RF. The variable importance for the best Random Forest will be shown as a part of "Analysis" paragraph of this paper.
 
 Below we would like to present the parameters of optimal cutpoint calculated for the best model:
@@ -771,23 +735,16 @@ Steps 1. and 2. allowed us to create first plot (similar to varImpPlot())
 
 Point 2. informed us how important was a given variable for the model, point 4. showed how popular were the most important skills for model. The plots are shown below.
 
-```{r}
-tabsetPanel(
-  tabPanel(
-    "Importance of variables for the best model",
-    img(src = "plots/cvRF/bestRFVarImpPlot.png")
-  ),
-  tabPanel(
-    "Importance of variables vs their popularity - learning dataset",
-    img(src = "plots/cvRF/importanceVsAppereance.png")
-  ),
-  tabPanel(
-    "Importance of variables vs their popularity - complete dataset",
-    img(src = "plots/cvRF/importanceVsAppearanceBigDF.png")
-  ),
-  tabPanel(
-    "Importance of variables vs their popularity - complete dataset (additional columns omited)",
-    img(src = "plots/cvRF/varImpVSKWCountDS_OK.png")
-  )
-)
-```
+![](plots/cvRF/varImpVSKWCountDS_OK.png)
+
+# Conclusions
+
+The conclusions drawn ater analysis are as follows:
+
+  1.  The general division between the very specific skills (R, SQL, Tableau, ...) and less specific skills (analytical thinking, forecasting, credit risk, math, ...) is observable on the word-clouds. This indicates that the most important skills are connected with conducting valuable analysis (good knowledge of certain phenomenons, theorems, ablity to incorporate them into analysis efficiently in order to obtain best possible result, ...) rather than mastering sepcific analytical tools.
+  
+  2.  The good SQL knowledge is always required which is understandable while one works with large datasets.
+  
+  3.  Perhaps there is a correlation between specific analytical tools and salary, but during this analysis there was no data which would allow validation of such thesis.
+  
+  4.  There is much higher demand for very popular IT skills (like Java, SQL, Python, Computer Science) during June-August period than during the remaining timespan. This may be caused by graduations or internships however the timespan of this research would not allow to determine that.
