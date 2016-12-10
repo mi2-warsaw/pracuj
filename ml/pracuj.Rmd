@@ -614,7 +614,7 @@ In this chapter we would like to briefly present obtained results. We thought it
 
 ## Demand for given skills throughout the given time period
 
-First of all the reader may use shiny app below to investigate how popular was selected phrase during the selected time period. Upper plot shows skill popularity vs time for entire filtered dataset. The plot below shows skills popularity vs time only for data scientist (tagged by the best RF). There was inconsistency between those two datasets (full dataset and dataset only with data scientists) - the different number of columns. The model was trained on smaller dataset and sometimes the keyword found in large set of data was not found in training data. That is why the reader may see error while chooseing certain skill name (like torch7 or scikit_learn). We were aware of this problem but wanted to show all found skills without multiplying plots.  We leave those plots for a reader to analyse.
+First of all the reader may use shiny app below to investigate how popular was selected phrase during the selected time period. Upper plot shows skill popularity vs time for entire filtered dataset. The plot below shows skills popularity vs time only for data scientist (tagged by the best RF). There was inconsistency between those two datasets (full dataset and dataset only with data scientists) - the different number of columns. The model was trained on smaller dataset and sometimes the keyword found in large set of data was not found in training data. That is why the reader may see error while choosing certain skill name (like torch7 or scikit_learn). We were aware of this problem but wanted to show all found skills without multiplying plots.  We leave those plots for a reader to analyse.
 
 ```{r}
 sg <- read_csv("data/prog_tag_skills_table_names.csv") %>%
@@ -675,8 +675,8 @@ fluidRow(
 
 renderPlot({
   toPlot <- preparePlot(st)
-  ggplot2::qplot(data = toPlot$plotData, month, skill) +
-    scale_x_continuous(breaks = 1:12, labels = locale()$date_names$mon[1:12]) +
+  qplot(data = toPlot$plotData, month, skill) +
+    scale_x_continuous(breaks = 1:12, labels = locale()$date_names$mon) +
     scale_y_continuous(
       breaks = seq(0, 10^6, toPlot$seqBy)
     ) +
@@ -691,16 +691,14 @@ renderPlot({
 ```{r}
 renderPlot({
   toPlotDS <- preparePlot(stDS)
-  ggplot2::qplot(data = toPlotDS$plotData, month, skill) +
-    scale_x_continuous(breaks = 1:12, labels = locale()$date_names$mon[1:12]) +
-    scale_y_continuous(
-      breaks = seq(0, 10^6, toPlotDS$seqBy)
-    ) +
+  qplot(data = toPlotDS$plotData, month, skill) +
+    scale_x_continuous(breaks = 1:12, labels = locale()$date_names$mon) +
+    scale_y_continuous(breaks = seq(0, 10^6, toPlotDS$seqBy)) +
     geom_smooth(level = 0.1) +
     xlab("Months") +
     ylab("Number of skill occurrences") +
     theme(panel.grid.minor = element_blank())
-})
+  })
 ```
 
 ## Word cloud plots
