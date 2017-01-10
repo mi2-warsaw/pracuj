@@ -15,7 +15,7 @@ runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, cache=TRUE)
 ```
 
 ```{r}
@@ -26,6 +26,7 @@ library(jsonlite)
 library(knitr)
 library(pander)
 library(readr)
+load("data.rda")
 ```
 
 ```{r}
@@ -223,11 +224,11 @@ We scraped and split into different columns the following properties of each job
 
 Here is a subset of the database structure:
 ```{r}
-example <- read_csv("data/example.csv")
-example$href <- "http://www.pracuj.pl/..."
-example$description <- "Offer's description"
-example$data_science_tof <- NULL
-example$positive_phrase <- NULL
+#example <- read_csv("data/example.csv")
+#example$href <- "http://www.pracuj.pl/..."
+#example$description <- "Offer's description"
+#example$data_science_tof <- NULL
+#example$positive_phrase <- NULL
 kable(example)
 ```
 
@@ -265,7 +266,7 @@ Few things were clear at the starting point of this chapter:
 In order to perform filtering, we needed the data frame with 'ids' as primary keys and skills/keywords as column names. We decided to go for the data frame in which every skill name/keyword would have its own column and every offer would have its own row. The example of desired data structure is shown below. The '1' is placed in the proper column of a given row if the certain skill/keyword was found in offer's description. If the skill was not found the '0' value appeared in a certain row/column combination.
 
 ```{r}
-sample <- read_csv("data/sample.csv")
+#sample <- read_csv("data/sample.csv")
 kable(sample)
 ```
 
@@ -617,16 +618,16 @@ In this chapter we would like to briefly present obtained results. We thought it
 First of all the reader may use shiny app below to investigate how popular was selected phrase during the selected time period. Upper plot shows skill popularity vs time for entire filtered dataset. The plot below shows skills popularity vs time only for data scientist (tagged by the best RF). There was inconsistency between those two datasets (full dataset and dataset only with data scientists) - the different number of columns. The model was trained on smaller dataset and sometimes the keyword found in large set of data was not found in training data. That is why the reader may see error while choosing certain skill name (like torch7 or scikit_learn). We were aware of this problem but wanted to show all found skills without multiplying plots.  We leave those plots for a reader to analyse.
 
 ```{r}
-sg <- read_csv("data/prog_tag_skills_table_names.csv") %>%
-  setGroups()
-st <- read_csv("data/bigKWCountTab_dates.csv") %>%
-  select(-id)
+#sg <- read_csv("data/prog_tag_skills_table_names.csv") %>%
+#  setGroups()
+#st <- read_csv("data/bigKWCountTab_dates.csv") %>%
+#  select(-id)
 w2c <- words2Cloud(st)
 
-sgDS <- read_csv("data/prog_tag_skills_table_names_DS.csv") %>%
-  setGroups()
-stDS <- read_csv("data/bigKWCountTabDS_dates.csv") %>% 
-          select(-id)
+#sgDS <- read_csv("data/prog_tag_skills_table_names_DS.csv") %>%
+#  setGroups()
+#stDS <- read_csv("data/bigKWCountTabDS_dates.csv") %>% 
+#          select(-id)
 w2cDS <- words2Cloud(stDS) %>%
   filter(
     !(words %in% c(
