@@ -15,7 +15,7 @@ runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, cache=TRUE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, cache=FALSE)
 ```
 
 ```{r}
