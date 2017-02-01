@@ -142,7 +142,7 @@ jfList <- list(c(), c(), c(), c()) %>%
 # Filter offers by type of contract
 for (i in jf) {
   jfLink <- paste0("http://www.pracuj.pl/praca?jf=", i)
-  
+
   # Collect IDs for given type
   for (j in 1:nOfPages) {
     pnPage <- read_html(paste0(jfLink, "&pn=", j))
@@ -151,11 +151,11 @@ for (i in jf) {
     offersIDs <- pnNode[nodeID] %>%
       html_text() %>%
       sqmSub()
-    
+
     if (offersIDs == "") {
       break
     }
-    
+
     switch(
       i,
       "1" = jfList$full <- pasteIDs(jfList$full),
@@ -176,15 +176,15 @@ for (i in 1:nOfPages) {
 
   scrappedPage <- read_html(paste0("http://www.pracuj.pl/praca?pn=", i))
   scrappedNodes <- html_nodes(scrappedPage, css = "#mainOfferList .o-list_item_link_name")
-  
+
   if (length(scrappedNodes) == 0) {break}
-  
+
   links <- c(
     links,
     html_attr(scrappedNodes, "href") %>%
       na.omit(links)
   )
-  
+
   print(
     paste0(
       "scrapped pages: ", format(round(mainPercentage, 2), nsmall = 2), "%"
@@ -197,32 +197,32 @@ idLinks <- isIDinDB(links)
 for (i in 1:nrow(idLinks)) {
   # current progress
   subPercentage <- i/nrow(idLinks)*100
-  
+
   # Getting link ready
   href <- paste0("http://www.pracuj.pl", idLinks$href[i])
-  
+
   # Reading offer ID
   id <- idLinks$id[i]
-  
+
   # Reading link
   currentLinkSource <- read_html(href)
-  
+
   # Reading employer name
   employer <- html_nodes(
     currentLinkSource,
-    css = ".o-top__cnt_main_emplo-inline span"
+    css = ".o-main__right_offer_head_emplo span"
   ) %>%
     html_text() %>%
     adjustString()
-  
+
   # Reading job name
   position <- html_nodes(
     currentLinkSource,
-    css = ".o-top__cnt_main_job"
+    css = "#offerTitle"
   ) %>%
     html_text() %>%
     adjustString()
-  
+
   # Reading job grade
   grade <- html_nodes(
     currentLinkSource,
@@ -230,16 +230,16 @@ for (i in 1:nrow(idLinks)) {
   ) %>%
     html_text() %>%
     adjustString()
-  
+
   # Reading locations
   location <- html_nodes(
     currentLinkSource,
-    css = ".latlng span"
+    css = ".latlng"
   ) %>%
     html_text() %>%
-    paste0(collapse = "") %>%
+    gsub("pokaż mapę", "", .) %>%
     adjustString()
-  
+
   # Reading offer details
   description <- html_nodes(
     currentLinkSource,
@@ -254,21 +254,23 @@ for (i in 1:nrow(idLinks)) {
       "([[:alpha:]])([[:lower:]])([[:blank:]])?([[:punct:]]?)([[:blank:]])?([[:upper:]])",
       "\\1\\2 \\6",
       .
-    )
-  
+    ) %>%
+    trimws()
+
   # Reading date of the offer announcement
   date <- html_nodes(
     currentLinkSource,
-    css = ".ico-time .o-top__cnt_main_details_item_text_ico+ span"
+    css = ".ico-time .o-main__right_offer_cnt_details_item_text_ico+ span"
   ) %>%
-    html_text()
-  
+    html_text() %>%
+    adjustString()
+
   # Reading scripts with categories
   scripts <- html_nodes(
     currentLinkSource,
     css = "script"
   )
-  
+
   if (length(scripts) >= 7) {
     main_category <- getCategories(scripts, "offerData")
     sub_category <- getCategories(scripts, "soc_product")
@@ -276,54 +278,54 @@ for (i in 1:nrow(idLinks)) {
     main_category <- NA
     sub_category <- NA
   }
-  
+
   # Reading salary
   salary <- html_nodes(
     currentLinkSource,
-    css = ".o-top__cnt_main_details_item_text.ico-money"
+    css = ".ico-money"
   ) %>%
     html_text()
-  
+
   if (length(salary) == 0) {
     salary <- NA
   } else {
     salary <- salary %>%
-      gsub("[[:space:]]{0,}\n", "", .)
+      adjustString()
   }
-  
+
   # Checking contract
   contract <- checkContract(id)
-  
+
   # Handling hidden informations
   zeroLengthKiller <- list(
     id, employer, position, grade, location, date, description
   )
   changeIndicator <- c()
-  
+
   for (index in 1:length(zeroLengthKiller)) {
     if(length(zeroLengthKiller[[index]]) == 0) {
       zeroLengthKiller[[index]] <- c("Rekrutacja ukryta")
       changeIndicator <- c(changeIndicator, index)
     }
   }
-  
+
   for (varName in changeIndicator) {
     assign(paste0(jobs_names[varName]), zeroLengthKiller[[varName]])
   }
-  
+
   jobs_1 <- data_frame(
     id, employer, position, grade, location, date, description, href,
     main_category, sub_category, salary, contract
   )
   jobs <- rbind(jobs, jobs_1)
-  
+
   # Current progress
   print(
     paste0(
       "scrapped offers: ", format(round(subPercentage, 2), nsmall = 2), "%"
     )
   )
-  
+
   # Insert into DB
   dbGetQuery(
     polaczenie,
@@ -344,7 +346,7 @@ for (i in 1:nrow(idLinks)) {
       "')"
     )
   )
-  
+
   # Confirm load
   print(paste0("offer of id:   ", id, "   loaded into DB"))
 }
