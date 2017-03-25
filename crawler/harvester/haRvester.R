@@ -83,7 +83,8 @@ getCategories <- function(scriptNodes, funPhrase) {
     unlist()
   phrase <- script %>%
     grep(valPhrase, .) %>%
-    script[.]
+    script[.] %>%
+    trimws()
   switch(
     funPhrase,
     offerData = phrase %>%
@@ -210,7 +211,7 @@ for (i in 1:nrow(idLinks)) {
   # Reading employer name
   employer <- html_nodes(
     currentLinkSource,
-    css = ".o-main__right_offer_head_emplo span"
+    css = ".emplo_cnt_link .emplo_cnt_link_text"
   ) %>%
     html_text() %>%
     adjustString()
