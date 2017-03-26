@@ -154,7 +154,7 @@ for (i in jf) {
       sqmSub()
 
     if (offersIDs == "") {
-      break
+      break()
     }
 
     switch(
@@ -178,7 +178,7 @@ for (i in 1:nOfPages) {
   scrappedPage <- read_html(paste0("http://www.pracuj.pl/praca?pn=", i))
   scrappedNodes <- html_nodes(scrappedPage, css = "#mainOfferList .o-list_item_link_name")
 
-  if (length(scrappedNodes) == 0) {break}
+  if (length(scrappedNodes) == 0) {break()}
 
   links <- c(
     links,
@@ -207,6 +207,12 @@ for (i in 1:nrow(idLinks)) {
 
   # Reading link
   currentLinkSource <- read_html(href)
+
+  if (currentLinkSource %>%
+      html_nodes(css = ".emptyResults__cnt_title") %>%
+      length() != 0) {
+    next()
+  }
 
   # Reading employer name
   employer <- html_nodes(
